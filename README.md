@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Xether AI - Developer Documentation
+
+## Overview
+
+The developer documentation site for Xether AI, providing comprehensive guides, API references, tutorials, and technical specifications for the platform.
+
+## Purpose
+
+This site serves as the **technical knowledge base** for developers, data engineers, and ML engineers working with Xether AI. It includes:
+
+- **Getting Started Guides**: Onboarding for new users
+- **API Reference**: Complete REST and gRPC API documentation
+- **Pipeline Configuration**: How to define and execute data pipelines
+- **Integration Guides**: Connecting to S3, Snowflake, PostgreSQL, and other data sources
+- **Best Practices**: Patterns for dataset versioning, pipeline design, and synthetic data generation
+- **Architecture Documentation**: System design, communication protocols, and infrastructure
+- **SDK Documentation**: Client libraries for Python, JavaScript, Go, and Java
+- **Troubleshooting**: Common issues and solutions
+
+## Content Structure (Planned)
+
+```
+/docs
+├── /getting-started
+│   ├── quickstart
+│   ├── installation
+│   └── core-concepts
+├── /api-reference
+│   ├── rest-api
+│   ├── grpc-api
+│   └── authentication
+├── /pipelines
+│   ├── pipeline-basics
+│   ├── stage-reference
+│   └── custom-stages
+├── /datasets
+│   ├── versioning
+│   ├── metadata
+│   └── lineage
+├── /integrations
+│   ├── s3
+│   ├── snowflake
+│   ├── postgresql
+│   └── custom-connectors
+├── /ml-services
+│   ├── outlier-detection
+│   ├── synthetic-generation
+│   └── model-versioning
+├── /architecture
+│   ├── system-overview
+│   ├── microservices
+│   └── communication
+└── /sdk
+    ├── python
+    ├── javascript
+    ├── go
+    └── java
+```
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Library**: React 19
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **Content**: MDX for documentation pages
+- **Search**: Algolia or custom search (planned)
+- **Code Highlighting**: Shiki or Prism
+- **Data Fetching**: TanStack Query
+- **API Communication**: REST (to main backend for dynamic content)
+
+## Frontend Architecture
+
+### Content Strategy
+
+- **Static pages**: MDX files compiled at build time
+- **Dynamic content**: API references fetched from backend OpenAPI spec
+- **Versioning**: Documentation versions match platform releases
+- **Search**: Full-text search across all documentation
+
+### Communication
+
+- **Backend API**: REST for dynamic API documentation
+- **No direct storage access**: All examples and references via backend
+- **Public access**: Most docs are public, some require authentication
+
+## Design Principles
+
+- **Clarity over cleverness**: Simple, direct explanations
+- **Code examples first**: Show, then explain
+- **Searchable**: Fast, accurate search functionality
+- **Versioned**: Documentation matches platform versions
+- **Similar tone to**: Stripe, Supabase, or HashiCorp documentation
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 20+ or later
+- npm, yarn, pnpm, or bun
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Local Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) with your browser
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+Optimized for deployment on [Vercel](https://vercel.com).
 
-To learn more about Next.js, take a look at the following resources:
+## Related Components
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **[Backend](../backend)**: API endpoints documented here
+- **[Main Pipeline](../main%20pipeline)**: Pipeline configuration reference
+- **[Website](../website)**: Marketing site linking to these docs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Status
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🚧 **In Development** - Content structure and initial documentation in progress.
