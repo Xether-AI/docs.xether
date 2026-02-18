@@ -43,7 +43,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ),
     p: ({ children, ...props }) => (
       <p
-        className="leading-7 [&:not(:first-child)]:mt-4"
+        className="leading-7 not-first:mt-4"
         style={{ color: "var(--foreground)" }}
         {...props}
       >
