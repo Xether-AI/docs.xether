@@ -34,40 +34,41 @@
 ### 2.1 Getting Started
 
 - [x] Write "What is Xether AI" introduction
-- [ ] Create quickstart guide
-- [ ] Write installation instructions
-- [ ] Document core concepts (datasets, pipelines, versions)
-- [ ] Create first pipeline tutorial
+- [x] Create quickstart guide
+- [ ] Write installation instructions (partially covered in quickstart)
+- [x] Document core concepts (datasets, pipelines, versions)
+- [x] Create first pipeline tutorial (covered in quickstart)
 
 ### 2.2 API Reference
 
 - [ ] Set up OpenAPI spec integration
-- [ ] Create REST API documentation structure
-- [ ] Document authentication endpoints
+- [x] Create REST API documentation structure
+- [x] Document authentication endpoints
 - [ ] Document dataset endpoints
 - [ ] Document pipeline endpoints
 - [ ] Document execution endpoints
-- [ ] Add request/response examples
+- [x] Add request/response examples (in overview and auth)
 - [ ] Create interactive API explorer (optional)
 
 ### 2.3 Pipeline Documentation
 
-- [ ] Document pipeline YAML/JSON schema
-- [ ] Create stage reference documentation
-- [ ] Document ingestion stages
-- [ ] Document cleaning stages
-- [ ] Document validation stages
-- [ ] Document transformation stages
-- [ ] Document augmentation stages
-- [ ] Provide pipeline examples
+- [x] Document pipeline YAML/JSON schema
+- [x] Create stage reference documentation (basics covered)
+- [x] Document ingestion stages
+- [x] Document cleaning stages
+- [x] Document validation stages
+- [x] Document transformation stages
+- [x] Document augmentation stages
+- [x] Provide pipeline examples
+- [ ] Create comprehensive stage reference page (detailed options)
 
 ### 2.4 Dataset Documentation
 
-- [ ] Document dataset versioning
-- [ ] Explain dataset metadata
-- [ ] Document lineage tracking
-- [ ] Create dataset management guide
-- [ ] Add best practices
+- [x] Document dataset versioning
+- [x] Explain dataset metadata (covered in core concepts)
+- [x] Document lineage tracking (covered in core concepts)
+- [ ] Create dataset management guide (CRUD operations)
+- [x] Add best practices (in versioning doc)
 
 ### 2.5 Integration Guides
 
@@ -104,8 +105,8 @@
 
 ### 3.1 Code Blocks
 
-- [ ] Implement syntax highlighting
-- [ ] Add copy-to-clipboard functionality
+- [x] Implement syntax highlighting (via Shiki)
+- [x] Add copy-to-clipboard functionality
 - [ ] Support multiple language tabs
 - [ ] Add line highlighting
 - [ ] Support code diffs
@@ -128,20 +129,20 @@
 
 ### 3.4 Table of Contents
 
-- [ ] Generate TOC from headings
-- [ ] Add scroll spy for active section
-- [ ] Make TOC sticky on scroll
-- [ ] Add smooth scrolling
+- [x] Generate TOC from headings
+- [x] Add scroll spy for active section
+- [x] Make TOC sticky on scroll
+- [x] Add smooth scrolling (browser native)
 
 ## Phase 4: Navigation & Discovery
 
 ### 4.1 Sidebar Navigation
 
-- [ ] Create collapsible sidebar
-- [ ] Organize docs by category
-- [ ] Add active page highlighting
+- [x] Create collapsible sidebar (responsive, hidden on mobile)
+- [x] Organize docs by category
+- [x] Add active page highlighting
 - [ ] Implement breadcrumbs
-- [ ] Add "Next/Previous" page links
+- [ ] Add "Next/Previous" page links (placeholder exists)
 
 ### 4.2 Version Selector
 
@@ -307,6 +308,31 @@
 
 ---
 
+## Current Progress Summary
+
+**Overall Completion**: ~35-40%
+
+**Completed:**
+- ✅ Full Phase 1 (Foundation, MDX, Design System)
+- ✅ Core documentation content (Getting Started, Pipeline Basics, Dataset Versioning, API Overview/Auth)
+- ✅ Custom MDX components (Callout, Card, CodeBlock with copy)
+- ✅ Table of Contents with scroll spy
+- ✅ Responsive sidebar navigation with active highlighting
+- ✅ Syntax highlighting and code block functionality
+
+**In Progress:**
+- 🚧 API Reference (structure done, need endpoints: datasets, pipelines, executions)
+- 🚧 Content for empty sections (integrations, ml-services, architecture, sdk)
+
+**Next Priorities:**
+1. Complete API Reference endpoints (datasets, pipelines, executions)
+2. Add integration guides (S3, Snowflake, PostgreSQL)
+3. Document ML services (outlier detection, synthetic data)
+4. Create SDK documentation
+5. Add breadcrumbs and prev/next navigation
+6. Implement search functionality
+7. Add more tutorials and how-to guides
+
 **Estimated Timeline**: 6-8 weeks for full implementation
 **Priority**: Medium - Important for developer adoption, but can be built incrementally
-**Note**: Start with core getting started and API reference, expand from there.
+**Note**: Core getting started and API reference foundation is complete. Focus now on expanding content coverage.
