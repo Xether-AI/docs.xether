@@ -1,0 +1,111 @@
+---
+title: Authentication
+description: How to authenticate with the Xether AI API using API keys and OAuth.
+---
+
+# Authentication
+
+Xether AI supports two authentication methods: **API Keys** for server-to-server communication, and **OAuth 2.0** for user-facing applications.
+
+## API Keys
+
+API keys are the simplest way to authenticate. They are long-lived tokens scoped to your workspace.
+
+### Creating an API Key
+
+1. Go to [Settings → API Keys](https://app.xether.ai/settings/api-keys)
+2. Click **New API Key**
+3. Give it a name and select the required scopes
+4. Copy the key — it will only be shown once
+
+### Using an API Key
+
+Pass the key as a Bearer token in the `Authorization` header:
+
+```bash
+curl https://api.xether.ai/v1/datasets \
+  -H "Authorization: Bearer xai_your_api_key_here"
+```
+
+```python
+import xether
+
+client = xether.Client(api_key="xai_your_api_key_here")
+```
+
+```typescript
+import { XetherClient } from "@xether/sdk";
+
+const client = new XetherClient({ apiKey: process.env.XETHER_API_KEY });
+```
+
+> **Security tip**: Never hardcode API keys in source code. Use environment variables or a secrets manager.
+
+### API Key Scopes
+
+| Scope              | Description                        |
+| ------------------ | ---------------------------------- |
+| `datasets:read`    | Read dataset metadata and versions |
+| `datasets:write`   | Create and update datasets         |
+| `pipelines:read`   | Read pipeline definitions          |
+| `pipelines:write`  | Create and update pipelines        |
+| `executions:read`  | Read execution status and logs     |
+| `executions:write` | Trigger pipeline executions        |
+| `admin`            | Full access (use with caution)     |
+
+## OAuth 2.0
+
+For user-facing applications, use OAuth 2.0 with the Authorization Code flow.
+
+### Authorization URL
+
+```
+GET https://auth.xether.ai/oauth/authorize
+  ?client_id=YOUR_CLIENT_ID
+  &redirect_uri=https://yourapp.com/callback
+  &response_type=code
+  &scope=datasets:read pipelines:read
+  &state=RANDOM_STATE_STRING
+```
+
+### Token Exchange
+
+```bash
+curl -X POST https://auth.xether.ai/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=AUTH_CODE" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "redirect_uri=https://yourapp.com/callback"
+```
+
+Response:
+
+```json
+{
+  "access_token": "eyJhbGci...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "xai_refresh_..."
+}
+```
+
+### Refreshing Tokens
+
+```bash
+curl -X POST https://auth.xether.ai/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=refresh_token" \
+  -d "refresh_token=xai_refresh_..." \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET"
+```
+
+## Errors
+
+| Code                    | Meaning                          |
+| ----------------------- | -------------------------------- |
+| `401 Unauthorized`      | Missing or invalid API key       |
+| `403 Forbidden`         | Valid key but insufficient scope |
+| `429 Too Many Requests` | Rate limit exceeded              |

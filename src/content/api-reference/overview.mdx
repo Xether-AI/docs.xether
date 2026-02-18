@@ -1,0 +1,90 @@
+---
+title: API Reference Overview
+description: Complete reference for the Xether AI REST API.
+---
+
+# API Reference
+
+The Xether AI REST API gives you programmatic access to all platform features — datasets, pipelines, executions, and more.
+
+## Base URL
+
+```
+https://api.xether.ai/v1
+```
+
+## Authentication
+
+All API requests require a Bearer token in the `Authorization` header:
+
+```bash
+curl https://api.xether.ai/v1/datasets \
+  -H "Authorization: Bearer xai_your_api_key_here"
+```
+
+Get your API key from the [dashboard](https://app.xether.ai/settings/api-keys).
+
+## Request Format
+
+- All request bodies must be JSON with `Content-Type: application/json`
+- All responses are JSON
+- Timestamps are ISO 8601 (e.g., `2025-01-15T10:30:00Z`)
+
+## Response Format
+
+All responses follow a consistent envelope:
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
+Errors return a non-2xx status with:
+
+```json
+{
+  "error": {
+    "code": "DATASET_NOT_FOUND",
+    "message": "Dataset 'my-dataset' does not exist.",
+    "docs": "https://docs.xether.ai/errors/DATASET_NOT_FOUND"
+  }
+}
+```
+
+## Rate Limits
+
+| Plan       | Requests/minute |
+| ---------- | --------------- |
+| Free       | 60              |
+| Pro        | 600             |
+| Enterprise | Unlimited       |
+
+Rate limit headers are included in every response:
+
+```
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 598
+X-RateLimit-Reset: 1705312260
+```
+
+## Endpoints
+
+| Resource                                             | Description                       |
+| ---------------------------------------------------- | --------------------------------- |
+| [Authentication](/docs/api-reference/authentication) | Manage API keys and OAuth tokens  |
+| [Datasets](/docs/api-reference/datasets)             | Create, list, and manage datasets |
+| [Pipelines](/docs/api-reference/pipelines)           | Define and manage pipelines       |
+| [Executions](/docs/api-reference/executions)         | Trigger and monitor pipeline runs |
+
+## SDKs
+
+Official SDKs are available for:
+
+- [Python SDK](/docs/sdk/python) — `pip install xether-ai`
+- [JavaScript/TypeScript SDK](/docs/sdk/javascript) — `npm install @xether/sdk`
+- [Go SDK](/docs/sdk/go) — `go get github.com/xether-ai/go-sdk`
