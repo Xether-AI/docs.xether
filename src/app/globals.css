@@ -114,3 +114,17 @@ body {
 
 @utility font-sans { font-family: var(--font-sans); }
 @utility font-mono { font-family: var(--font-mono); }
+
+/* ─── Prose styles for MDX content ───────────────────────────────────────── */
+@utility prose-doc {
+  max-width: none;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+
+/* Sidebar scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
