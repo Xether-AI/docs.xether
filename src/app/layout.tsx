@@ -6,12 +6,12 @@ import { Providers } from "./providers";
 const snPro = localFont({
   src: [
     {
-      path: "../../public/fonts/sn-pro/SNPro-Regular.woff2",
+      path: "../../../public/fonts/sn-pro/SNPro-Regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../public/fonts/sn-pro/SNPro-Bold.woff2",
+      path: "../../../public/fonts/sn-pro/SNPro-Bold.woff2",
       weight: "700",
       style: "normal",
     },
