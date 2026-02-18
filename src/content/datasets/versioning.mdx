@@ -1,0 +1,76 @@
+---
+title: Dataset Versioning
+description: How Xether AI versions datasets and how to work with versions.
+---
+
+# Dataset Versioning
+
+Every time a pipeline writes to a dataset, Xether AI creates a new **immutable version**. This gives you a complete history of your data and the ability to reproduce any past state.
+
+## How Versioning Works
+
+When a pipeline execution completes successfully:
+
+1. The output data is written to immutable storage
+2. A new version record is created with metadata (schema, row count, checksum)
+3. The version is tagged (e.g., `latest`, or a custom tag you specify)
+4. Lineage is recorded linking this version to its inputs and pipeline
+
+## Listing Versions
+
+```python
+versions = client.datasets.list_versions("customer-records")
+
+for v in versions:
+    print(f"{v.id} | {v.created_at} | {v.record_count} rows | {v.tags}")
+```
+
+```bash
+curl https://api.xether.ai/v1/datasets/customer-records/versions \
+  -H "Authorization: Bearer xai_..."
+```
+
+## Accessing a Specific Version
+
+```python
+# By version ID
+v = client.datasets.get_version("customer-records", "ver_abc123")
+
+# By tag
+latest = client.datasets.get_version("customer-records", "latest")
+stable = client.datasets.get_version("customer-records", "stable")
+```
+
+## Tagging Versions
+
+```python
+client.datasets.tag_version("customer-records", "ver_abc123", "stable")
+```
+
+## Comparing Versions
+
+```python
+diff = client.datasets.diff("customer-records", "ver_abc123", "ver_def456")
+
+print(f"Added rows:   {diff.added_rows}")
+print(f"Removed rows: {diff.removed_rows}")
+print(f"Changed rows: {diff.changed_rows}")
+print(f"Schema changes: {diff.schema_changes}")
+```
+
+## Rolling Back
+
+To roll back to a previous version, simply reference it in your next pipeline run:
+
+```yaml
+stages:
+  - type: ingest
+    dataset: customer-records
+    version: ver_abc123 # Pin to a specific version
+```
+
+## Best Practices
+
+- **Tag stable versions** — Use tags like `stable` or `production` to mark versions safe for downstream use
+- **Keep version history** — Avoid deleting versions; storage is cheap, reproducibility is priceless
+- **Version your pipelines too** — Use `version` in your pipeline YAML to track which pipeline definition produced each dataset version

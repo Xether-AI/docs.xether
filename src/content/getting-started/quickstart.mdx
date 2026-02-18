@@ -1,0 +1,110 @@
+---
+title: Quickstart
+description: Get your first Xether AI pipeline running in under 5 minutes.
+---
+
+# Quickstart
+
+This guide walks you through creating your first data pipeline with Xether AI. By the end, you'll have ingested a CSV file, cleaned it, and created a versioned dataset.
+
+## Prerequisites
+
+- Node.js 20+ or Python 3.10+
+- An Xether AI account ([sign up here](https://xether.ai))
+- Your API key from the [dashboard](https://app.xether.ai/settings/api-keys)
+
+## Step 1: Install the SDK
+
+```bash
+# Python
+pip install xether-ai
+
+# Node.js
+npm install @xether/sdk
+```
+
+## Step 2: Authenticate
+
+```python
+import xether
+
+client = xether.Client(api_key="xai_your_api_key_here")
+```
+
+```typescript
+import { XetherClient } from "@xether/sdk";
+
+const client = new XetherClient({ apiKey: "xai_your_api_key_here" });
+```
+
+## Step 3: Create a Dataset
+
+```python
+dataset = client.datasets.create(
+    name="my-first-dataset",
+    description="Customer records from Q1 2025",
+    source={
+        "type": "s3",
+        "bucket": "my-bucket",
+        "path": "data/customers.csv"
+    }
+)
+
+print(f"Dataset created: {dataset.id}")
+```
+
+## Step 4: Run a Pipeline
+
+Define a simple cleaning pipeline:
+
+```yaml
+# pipeline.yaml
+name: clean-customers
+dataset: my-first-dataset
+stages:
+  - type: ingest
+    format: csv
+    options:
+      header: true
+
+  - type: clean
+    operations:
+      - drop_nulls: [email, phone]
+      - normalize_email: email
+      - trim_whitespace: all
+
+  - type: validate
+    rules:
+      - column: email
+        type: email
+      - column: age
+        type: integer
+        min: 0
+        max: 120
+```
+
+```python
+pipeline = client.pipelines.run(
+    config="pipeline.yaml",
+    dataset_id=dataset.id
+)
+
+print(f"Pipeline status: {pipeline.status}")
+```
+
+## Step 5: Access Your Versioned Dataset
+
+```python
+# Get the latest version
+version = client.datasets.get_version(dataset.id, "latest")
+print(f"Version: {version.id}, Records: {version.record_count}")
+
+# Download the cleaned data
+client.datasets.download(version.id, path="./cleaned_customers.csv")
+```
+
+## What's Next?
+
+- [Core Concepts](/docs/getting-started/core-concepts) — Understand datasets, pipelines, and versioning in depth
+- [Pipeline Reference](/docs/pipelines/basics) — Explore all available pipeline stages
+- [API Reference](/docs/api-reference/overview) — Use the REST API directly

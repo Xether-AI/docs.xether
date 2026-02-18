@@ -1,0 +1,178 @@
+---
+title: Pipeline Basics
+description: Learn how to define and run data pipelines with Xether AI.
+---
+
+# Pipeline Basics
+
+A **pipeline** in Xether AI is a declarative, ordered sequence of stages that transforms a dataset. Pipelines are defined in YAML or JSON and executed by the Xether AI runtime.
+
+## Pipeline Structure
+
+```yaml
+name: my-pipeline # Unique name within your workspace
+description: "Optional description"
+version: "1.0.0" # Semantic version for your pipeline definition
+
+dataset: my-source-dataset # Input dataset name
+
+output:
+  dataset: my-output-dataset # Output dataset name (created if not exists)
+  version_tag: latest # Tag to apply to the output version
+
+stages:
+  - type: ingest
+    # ...stage config
+
+  - type: clean
+    # ...stage config
+
+  - type: validate
+    # ...stage config
+```
+
+## Running a Pipeline
+
+### Via SDK
+
+```python
+# Run from a YAML file
+execution = client.pipelines.run(config="pipeline.yaml")
+
+# Run inline
+execution = client.pipelines.run(config={
+    "name": "my-pipeline",
+    "dataset": "my-source-dataset",
+    "stages": [
+        {"type": "ingest", "format": "csv"},
+        {"type": "clean", "operations": [{"drop_nulls": "all"}]}
+    ]
+})
+
+# Wait for completion
+execution.wait()
+print(f"Status: {execution.status}")
+```
+
+### Via REST API
+
+```bash
+curl -X POST https://api.xether.ai/v1/executions \
+  -H "Authorization: Bearer xai_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pipeline": {
+      "name": "my-pipeline",
+      "dataset": "my-source-dataset",
+      "stages": [
+        {"type": "ingest", "format": "csv"},
+        {"type": "clean", "operations": [{"drop_nulls": "all"}]}
+      ]
+    }
+  }'
+```
+
+## Stage Types
+
+### `ingest`
+
+Reads data from a source into the pipeline.
+
+```yaml
+- type: ingest
+  format: csv # csv, parquet, json, jsonl
+  source:
+    type: s3
+    bucket: my-bucket
+    path: data/input.csv
+  options:
+    header: true
+    delimiter: ","
+    encoding: utf-8
+```
+
+### `clean`
+
+Applies data cleaning operations.
+
+```yaml
+- type: clean
+  operations:
+    - drop_nulls: [email, phone] # Drop rows where these columns are null
+    - fill_nulls:
+        age: 0
+        country: "Unknown"
+    - normalize_email: email # Lowercase and validate email format
+    - trim_whitespace: all # Trim all string columns
+    - deduplicate: [id] # Remove duplicate rows by key
+```
+
+### `validate`
+
+Asserts data quality rules. Fails the pipeline if rules are violated.
+
+```yaml
+- type: validate
+  on_failure: fail # fail | warn | skip
+  rules:
+    - column: email
+      type: email
+    - column: age
+      type: integer
+      min: 0
+      max: 150
+    - column: status
+      enum: [active, inactive, pending]
+    - expression: "revenue >= 0"
+      message: "Revenue cannot be negative"
+```
+
+### `transform`
+
+Reshapes and aggregates data.
+
+```yaml
+- type: transform
+  operations:
+    - select: [id, email, age, country]
+    - rename:
+        email: email_address
+    - add_column:
+        name: full_name
+        expression: "concat(first_name, ' ', last_name)"
+    - filter: "age >= 18"
+    - sort:
+        by: created_at
+        order: desc
+```
+
+### `augment`
+
+Enriches data with external sources or ML predictions.
+
+```yaml
+- type: augment
+  operations:
+    - join:
+        dataset: country-codes
+        on: country
+        type: left
+    - ml_predict:
+        model: churn-predictor-v2
+        input_columns: [age, country, revenue]
+        output_column: churn_probability
+```
+
+## Scheduling Pipelines
+
+```yaml
+name: daily-cleanup
+schedule:
+  cron: "0 2 * * *" # Run at 2am every day
+  timezone: UTC
+```
+
+## Next Steps
+
+- [Stage Reference](/docs/pipelines/stage-reference) — Full reference for all stage options
+- [Pipeline Examples](/docs/pipelines/examples) — Real-world pipeline patterns
