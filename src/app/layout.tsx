@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${snPro.variable} font-sans antialiased`}>
+      <body className={`${snPro.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
