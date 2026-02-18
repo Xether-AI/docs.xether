@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "../ThemeToggle";
+import Button from "@/components/ui/Button";
 
 export function SiteHeader() {
   return (
@@ -26,7 +27,13 @@ export function SiteHeader() {
             </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Button
+            text="Join our community"
+            href="https://discord.gg/xether-ai"
+            variant="primary"
+            size="sm"
+          />
           <ThemeToggle />
         </div>
       </div>
