@@ -7,21 +7,31 @@ interface DocsLayoutProps {
 
 export function DocsLayout({ children }: DocsLayoutProps) {
   return (
-    <div className="border-b">
-      <div className="container flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-10">
+    <div className="container mx-auto px-4">
+      <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">
+        {/* Sidebar */}
         <DocsSidebar />
-        <main className="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
-          <div className="mx-auto w-full min-w-0">{children}</div>
-          <div className="hidden text-sm xl:block">
-            <div className="sticky top-16 -mt-10 pt-4">
-              {/* Table of Contents will go here */}
-              <div className="space-y-4">
-                <h4 className="font-medium">On This Page</h4>
-                <div className="text-muted-foreground">TOC Items...</div>
-              </div>
-            </div>
+
+        {/* Main content */}
+        <main className="relative py-8 min-w-0">
+          <article className="prose-doc max-w-none">{children}</article>
+
+          {/* Prev / Next navigation placeholder */}
+          <div
+            className="mt-12 flex items-center justify-between border-t pt-6"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div />
+            <div />
           </div>
         </main>
+
+        {/* Right TOC column — rendered per-page via layout slot */}
+        <div className="hidden lg:block">
+          <div className="sticky top-20 py-8">
+            {/* TOC is injected per-page */}
+          </div>
+        </div>
       </div>
     </div>
   );
