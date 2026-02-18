@@ -1,36 +1,39 @@
 # Documentation Site Implementation Tasks
 
-## Phase 1: Project Setup & Foundation
+## Phase 1: Project Setup & Foundation ✅
 
-### 1.1 Content Architecture
+### 1.1 Content Architecture ✅
 
-- [ ] Define documentation structure (see README)
-- [ ] Create folder structure for MDX files
-- [ ] Set up content organization system
-- [ ] Define URL routing strategy
-- [ ] Create content templates
+- [x] Define documentation structure (see README)
+- [x] Create folder structure for MDX files
+- [x] Set up content organization system
+- [x] Define URL routing strategy
+- [x] Create content templates
 
-### 1.2 MDX Configuration
+### 1.2 MDX Configuration ✅
 
-- [ ] Install and configure MDX
-- [ ] Set up MDX plugins (remark, rehype)
-- [ ] Configure code syntax highlighting (Shiki)
-- [ ] Add support for custom components in MDX
-- [ ] Configure frontmatter parsing
+- [x] Install and configure MDX (`@next/mdx`)
+- [x] Configure dynamic `[...slug]` route for MDX rendering
+- [x] Configure frontmatter parsing
+- [x] Add support for custom components in MDX
 
-### 1.3 Design System
+### 1.3 Design System ✅
 
-- [ ] Create documentation-specific components
-- [ ] Design code block component
-- [ ] Create callout/alert components
-- [ ] Design table of contents component
-- [ ] Create breadcrumb component
+- [x] SN Pro font (Regular 400, Bold 700) via `next/font/local`
+- [x] Pale green primary color (`#78fcd6`) — consistent with website
+- [x] Dark/light mode via `next-themes`
+- [x] Tailwind CSS v4 global tokens and utilities
+- [x] Site header with theme toggle
+- [x] Sidebar navigation component
+- [x] Docs layout (sidebar + content + TOC placeholder)
+
+---
 
 ## Phase 2: Core Documentation Pages
 
 ### 2.1 Getting Started
 
-- [ ] Write "What is Xether AI" introduction
+- [x] Write "What is Xether AI" introduction
 - [ ] Create quickstart guide
 - [ ] Write installation instructions
 - [ ] Document core concepts (datasets, pipelines, versions)

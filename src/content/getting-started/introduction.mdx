@@ -1,14 +1,50 @@
+---
+title: Introduction to Xether AI
+description: Learn what Xether AI is and how it helps you build AI-ready data pipelines.
+---
+
 # Introduction to Xether AI
 
-Xether AI is a next-generation data infrastructure platform designed for AI-native applications. It automates the complex processes of data ingestion, cleaning, management, and improvement at scale.
+Xether AI is a **data infrastructure platform** built for AI-native teams. It automates the complex work of ingesting, cleaning, validating, and versioning datasets — so your models always train on high-quality data.
 
-## Core Features
+## What Xether AI Does
 
-- **Automated Pipelines**: Build and deploy data pipelines with minimal configuration.
-- **Dataset Versioning**: Track changes and maintain full lineage of your datasets.
-- **ML-Native Services**: Integrated outlier detection and synthetic data generation.
-- **Scale with Ease**: Built for performance and reliability across high-volume data streams.
+At its core, Xether AI gives you:
+
+- **Automated Pipelines** — Define data pipelines in YAML or JSON. Xether handles execution, retries, and monitoring.
+- **Dataset Versioning** — Every dataset mutation creates an immutable version. Roll back, compare, or branch at any time.
+- **Lineage Tracking** — Know exactly where your data came from and how it was transformed.
+- **ML-Native Services** — Built-in outlier detection and synthetic data generation, ready to use in any pipeline.
+- **Multi-Source Connectors** — Connect to S3, Snowflake, PostgreSQL, and more with minimal configuration.
+
+## Who Is It For?
+
+| Role                | How Xether AI Helps                                                          |
+| ------------------- | ---------------------------------------------------------------------------- |
+| **Data Engineers**  | Build and schedule pipelines without writing boilerplate infrastructure code |
+| **ML Engineers**    | Get clean, versioned datasets with full lineage for reproducible training    |
+| **Data Scientists** | Explore dataset versions and generate synthetic data for experimentation     |
+
+## Core Concepts
+
+Before diving in, familiarise yourself with these key concepts:
+
+- **Dataset** — A named, versioned collection of data. Can be a file, table, or stream.
+- **Pipeline** — A directed sequence of stages that transforms a dataset.
+- **Stage** — A single processing step in a pipeline (ingest, clean, validate, transform, augment).
+- **Version** — An immutable snapshot of a dataset at a point in time.
+- **Lineage** — The full history of how a dataset was created and transformed.
 
 ## Next Steps
 
-Check out our [Quickstart guide](/docs/getting-started/quickstart) to get your first pipeline running in minutes.
+<Cards>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Get your first pipeline running in under 5 minutes.
+  </Card>
+  <Card title="Core Concepts" href="/docs/getting-started/core-concepts">
+    Deep-dive into datasets, pipelines, and versioning.
+  </Card>
+  <Card title="API Reference" href="/docs/api-reference/overview">
+    Explore the full REST API.
+  </Card>
+</Cards>
