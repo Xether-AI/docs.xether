@@ -2,8 +2,8 @@
 
 /* ─── Design Tokens (Tailwind v4 @theme) ─────────────────────────────────── */
 @theme {
-  /* Typography */
-  --font-sans: var(--font-sn-pro), ui-sans-serif, system-ui, sans-serif;
+  /* Typography — NOTE: @theme cannot use var() references in Tailwind v4.
+     Font is applied directly on body below using the Next.js runtime variable. */
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Border radius */
@@ -88,7 +88,8 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  /* Apply SN Pro: --font-sn-pro is injected at runtime by Next.js localFont */
+  font-family: var(--font-sn-pro), ui-sans-serif, system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
