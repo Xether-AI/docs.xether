@@ -1,0 +1,1114 @@
+---
+title: Stage Reference
+description: Comprehensive reference for all pipeline stages and their configuration options
+---
+
+# Stage Reference
+
+This comprehensive reference covers all available pipeline stages in Xether AI, their configuration options, parameters, and usage examples.
+
+## Stage Overview
+
+Pipeline stages are the building blocks of data processing workflows. Each stage performs a specific operation on your data, from ingestion and cleaning to transformation and output.
+
+### Stage Categories
+
+- **Ingestion Stages**: Load data from various sources
+- **Cleaning Stages**: Clean and preprocess data
+- **Validation Stages**: Validate data quality and constraints
+- **Transformation Stages**: Transform and enrich data
+- **Augmentation Stages**: Apply ML services and advanced processing
+- **Output Stages**: Write processed data to destinations
+
+## Ingestion Stages
+
+### File Ingestion
+
+**Purpose**: Load data from files in various formats
+
+**Configuration**:
+```yaml
+type: ingestion
+name: load-from-files
+config:
+  source: string              # Required: File path or pattern
+  format: string              # Required: File format
+  options: object              # Format-specific options
+  credentials: object         # Authentication credentials
+  schema: object              # Expected schema
+  validation: object          # Data validation rules
+```
+
+**Supported Formats**:
+
+#### CSV Files
+```yaml
+type: ingestion
+name: load-csv-data
+config:
+  source: "s3://bucket/data/*.csv"
+  format: "csv"
+  options:
+    header: true
+    delimiter: ","
+    quote: "\""
+    escape: "\\"
+    null_value: ""
+    infer_schema: true
+    date_format: "yyyy-MM-dd"
+    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+    encoding: "UTF-8"
+    skip_blank_lines: true
+    comment: "#"
+  credentials:
+    access_key_id: ${AWS_ACCESS_KEY_ID}
+    secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+    region: "us-east-1"
+```
+
+#### JSON Files
+```yaml
+type: ingestion
+name: load-json-data
+config:
+  source: "s3://bucket/data/*.json"
+  format: "json"
+  options:
+    multiline: false
+    allow_unquoted_field_names: false
+    allow_single_quotes: false
+    primitives_as_string: false
+    ignore_null_fields: false
+    date_format: "yyyy-MM-dd"
+    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+```
+
+#### Parquet Files
+```yaml
+type: ingestion
+name: load-parquet-data
+config:
+  source: "s3://bucket/data/*.parquet"
+  format: "parquet"
+  options:
+    compression: "snappy"        # Options: snappy, gzip, lzo, brotli, lz4
+    merge_schema: false
+    push_down_predicate: true
+    push_down_filters: true
+    partition_discovery: true
+    partition_column_names: ["year", "month", "day"]
+```
+
+#### Avro Files
+```yaml
+type: ingestion
+name: load-avro-data
+config:
+  source: "s3://bucket/data/*.avro"
+  format: "avro"
+  options:
+    avro_schema: null            # Path to external schema file
+    ignore_extension: false
+    datetime_rebase_mode: "legacy"
+    datetime_timezone: "UTC"
+```
+
+### Database Ingestion
+
+**Purpose**: Load data from relational databases
+
+**Configuration**:
+```yaml
+type: ingestion
+name: load-from-database
+config:
+  source: "database"
+  connection: object            # Database connection details
+  query: string                 # SQL query
+  options: object              # Query options
+  credentials: object         # Authentication credentials
+```
+
+**Examples**:
+
+#### PostgreSQL
+```yaml
+type: ingestion
+name: load-from-postgres
+config:
+  source: "postgresql"
+  connection:
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    database: ${POSTGRES_DATABASE}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    sslmode: "require"
+  query: |
+    SELECT 
+      customer_id,
+      email,
+      created_at,
+      updated_at
+    FROM customers
+    WHERE created_at >= '2024-01-01'
+  options:
+    batch_size: 10000
+    parallel_reads: true
+    max_parallel_readers: 4
+    use_cursor: true
+    fetch_size: 10000
+```
+
+#### MySQL
+```yaml
+type: ingestion
+name: load-from-mysql
+config:
+  source: "mysql"
+  connection:
+    host: ${MYSQL_HOST}
+    port: ${MYSQL_PORT}
+    database: ${MYSQL_DATABASE}
+    user: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+    charset: "utf8mb4"
+  query: |
+    SELECT id, name, email, created_at
+    FROM users
+    WHERE status = 'active'
+  options:
+    batch_size: 5000
+    fetch_size: 5000
+```
+
+#### Snowflake
+```yaml
+type: ingestion
+name: load-from-snowflake
+config:
+  source: "snowflake"
+  connection:
+    account: ${SNOWFLAKE_ACCOUNT}
+    user: ${SNOWFLAKE_USER}
+    password: ${SNOWFLAKE_PASSWORD}
+    warehouse: ${SNOWFLAKE_WAREHOUSE}
+    database: ${SNOWFLAKE_DATABASE}
+    schema: ${SNOWFLAKE_SCHEMA}
+  query: |
+    SELECT 
+      customer_id,
+      email,
+      created_at
+    FROM CUSTOMERS
+    WHERE CREATED_AT >= DATEADD(month, -1, CURRENT_DATE())
+  options:
+    batch_size: 50000
+    parallel_reads: true
+```
+
+### API Ingestion
+
+**Purpose**: Load data from REST APIs
+
+**Configuration**:
+```yaml
+type: ingestion
+name: load-from-api
+config:
+  source: "api"
+  endpoint: string             # API endpoint URL
+  method: string               # HTTP method
+  headers: object              # HTTP headers
+  params: object               # Query parameters
+  body: object                 # Request body
+  authentication: object        # Authentication configuration
+  pagination: object           # Pagination settings
+  options: object              # Request options
+```
+
+**Examples**:
+
+#### REST API
+```yaml
+type: ingestion
+name: load-from-rest-api
+config:
+  source: "api"
+  endpoint: "https://api.example.com/users"
+  method: "GET"
+  headers:
+    "Content-Type": "application/json"
+    "Accept": "application/json"
+  authentication:
+    type: "bearer_token"
+    token: ${API_TOKEN}
+  pagination:
+    type: "offset"
+    offset_param: "offset"
+    limit_param: "limit"
+    page_size: 100
+    max_pages: 1000
+  options:
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+```
+
+#### GraphQL API
+```yaml
+type: ingestion
+name: load-from-graphql
+config:
+  source: "api"
+  endpoint: "https://api.example.com/graphql"
+  method: "POST"
+  headers:
+    "Content-Type": "application/json"
+    "Authorization": "Bearer ${API_TOKEN}"
+  body:
+    query: |
+      query GetUsers($limit: Int, $offset: Int) {
+        users(limit: $limit, offset: $offset) {
+          id
+          name
+          email
+          createdAt
+        }
+      }
+    variables:
+      limit: 100
+      offset: 0
+  pagination:
+    type: "graphql_cursor"
+    cursor_param: "variables.offset"
+    cursor_increment: 100
+    max_pages: 100
+```
+
+## Cleaning Stages
+
+### Remove Duplicates
+
+**Purpose**: Remove duplicate records based on specified keys
+
+**Configuration**:
+```yaml
+type: cleaning
+name: remove-duplicates
+config:
+  strategy: "deduplicate"     # Required: Strategy type
+  keys: array                 # Required: Fields to check for duplicates
+  options: object              # Deduplication options
+```
+
+**Examples**:
+```yaml
+type: cleaning
+name: remove-duplicate-customers
+config:
+  strategy: "deduplicate"
+  keys: ["customer_id", "email"]
+  options:
+    keep: "first"              # Options: first, last
+    sort_by: "created_at"
+    sort_order: "desc"
+```
+
+### Handle Missing Values
+
+**Purpose**: Handle null or missing values in data
+
+**Configuration**:
+```yaml
+type: cleaning
+name: handle-missing-values
+config:
+  strategy: "missing_values"  # Required: Strategy type
+  fields: object              # Field-specific handling
+  options: object              # Global options
+```
+
+**Examples**:
+```yaml
+type: cleaning
+name: handle-missing-values
+config:
+  strategy: "missing_values"
+  fields:
+    email:
+      action: "drop"          # Drop rows with null email
+    age:
+      action: "fill"          # Fill with default value
+      value: 0
+    name:
+      action: "interpolate"    # Interpolate missing values
+    phone:
+      action: "forward_fill"   # Forward fill
+    address:
+      action: "backward_fill"  # Backward fill
+  options:
+    default_action: "keep"     # Default action for unspecified fields
+```
+
+### Data Type Conversion
+
+**Purpose**: Convert data types for consistency
+
+**Configuration**:
+```yaml
+type: cleaning
+name: convert-data-types
+config:
+  strategy: "type_conversion" # Required: Strategy type
+  conversions: object         # Type conversion rules
+  options: object              # Conversion options
+```
+
+**Examples**:
+```yaml
+type: cleaning
+name: convert-data-types
+config:
+  strategy: "type_conversion"
+  conversions:
+    age:
+      from: "string"
+      to: "integer"
+      format: "number"
+    created_at:
+      from: "string"
+      to: "timestamp"
+      format: "yyyy-MM-dd HH:mm:ss"
+    price:
+      from: "string"
+      to: "decimal"
+      format: "currency"
+    is_active:
+      from: "string"
+      to: "boolean"
+      true_values: ["yes", "true", "1"]
+      false_values: ["no", "false", "0"]
+  options:
+    error_on_failure: false
+    log_conversions: true
+```
+
+### Outlier Removal
+
+**Purpose**: Remove statistical outliers from numeric fields
+
+**Configuration**:
+```yaml
+type: cleaning
+name: remove-outliers
+config:
+  strategy: "outlier_removal" # Required: Strategy type
+  fields: array                # Fields to process
+  method: string              # Outlier detection method
+  parameters: object           # Method-specific parameters
+  options: object              # Additional options
+```
+
+**Examples**:
+```yaml
+type: cleaning
+name: remove-outliers
+config:
+  strategy: "outlier_removal"
+  fields: ["amount", "quantity", "duration"]
+  method: "iqr"               # Options: iqr, zscore, isolation_forest
+  parameters:
+    iqr_multiplier: 1.5       # For IQR method
+    zscore_threshold: 3.0     # For Z-score method
+    contamination: 0.1        # For isolation forest
+  options:
+    action: "remove"          # Options: remove, cap, flag
+    cap_method: "median"      # For cap action
+    output_field: "is_outlier"
+```
+
+## Validation Stages
+
+### Schema Validation
+
+**Purpose**: Validate data against expected schema
+
+**Configuration**:
+```yaml
+type: validation
+name: validate-schema
+config:
+  strategy: "schema_validation" # Required: Strategy type
+  schema: object               # Expected schema
+  options: object              # Validation options
+```
+
+**Examples**:
+```yaml
+type: validation
+name: validate-customer-schema
+config:
+  strategy: "schema_validation"
+  schema:
+    type: "struct"
+    fields:
+      - name: "customer_id"
+        type: "string"
+        nullable: false
+        constraints:
+          pattern: "^[A-Z0-9]{10}$"
+      - name: "email"
+        type: "string"
+        nullable: false
+        constraints:
+          format: "email"
+      - name: "age"
+        type: "integer"
+        nullable: true
+        constraints:
+          min: 0
+          max: 120
+      - name: "created_at"
+        type: "timestamp"
+        nullable: false
+  options:
+    strict_mode: true
+    error_on_extra_fields: false
+    log_violations: true
+```
+
+### Business Rules Validation
+
+**Purpose**: Validate business logic and constraints
+
+**Configuration**:
+```yaml
+type: validation
+name: validate-business-rules
+config:
+  strategy: "business_rules"   # Required: Strategy type
+  rules: array                 # Validation rules
+  options: object              # Validation options
+```
+
+**Examples**:
+```yaml
+type: validation
+name: validate-business-rules
+config:
+  strategy: "business_rules"
+  rules:
+    - name: "valid_email_domain"
+      description: "Email must be from allowed domains"
+      condition: "email IN ['@company.com', '@partner.com']"
+      severity: "error"
+    - name: "reasonable_age"
+      description: "Age must be reasonable"
+      condition: "age >= 18 AND age <= 100"
+      severity: "warning"
+    - name: "future_orders_not_allowed"
+      description: "Order date cannot be in the future"
+      condition: "order_date <= CURRENT_DATE()"
+      severity: "error"
+    - name: "positive_amounts"
+      description: "Amounts must be positive"
+      condition: "amount > 0"
+      severity: "error"
+  options:
+    stop_on_first_error: false
+    collect_all_violations: true
+    output_violations: true
+    violations_field: "validation_errors"
+```
+
+### Data Quality Checks
+
+**Purpose**: Perform comprehensive data quality assessments
+
+**Configuration**:
+```yaml
+type: validation
+name: data-quality-checks
+config:
+  strategy: "data_quality"     # Required: Strategy type
+  checks: array                 # Quality checks
+  options: object              # Check options
+```
+
+**Examples**:
+```yaml
+type: validation
+name: data-quality-checks
+config:
+  strategy: "data_quality"
+  checks:
+    - type: "completeness"
+      fields: ["email", "phone"]
+      threshold: 0.95           # 95% completeness required
+    - type: "uniqueness"
+      fields: ["customer_id"]
+      threshold: 1.0            # 100% uniqueness required
+    - type: "validity"
+      fields: ["email"]
+      format: "email"
+      threshold: 0.98
+    - type: "consistency"
+      field_pairs:
+        - ["state", "zip_code"]
+        - ["country", "phone_code"]
+      threshold: 0.90
+    - type: "timeliness"
+      fields: ["created_at", "updated_at"]
+      max_age_days: 30
+      threshold: 0.80
+  options:
+    generate_report: true
+    report_format: "json"
+    output_metrics: true
+```
+
+## Transformation Stages
+
+### Field Mapping
+
+**Purpose**: Rename and restructure fields
+
+**Configuration**:
+```yaml
+type: transformation
+name: map-fields
+config:
+  strategy: "field_mapping"    # Required: Strategy type
+  mappings: object              # Field mapping rules
+  options: object              # Mapping options
+```
+
+**Examples**:
+```yaml
+type: transformation
+name: map-fields
+config:
+  strategy: "field_mapping"
+  mappings:
+    # Simple renaming
+    cust_id: "customer_id"
+    cust_email: "email"
+    cust_name: "full_name"
+    
+    # Complex transformations
+    full_name:
+      expression: "CONCAT(first_name, ' ', last_name)"
+    age_group:
+      expression: |
+        CASE 
+          WHEN age < 18 THEN 'minor'
+          WHEN age < 65 THEN 'adult'
+          ELSE 'senior'
+        END
+    email_domain:
+      expression: "SPLIT(email, '@')[1]"
+  options:
+    keep_unmapped: false
+    overwrite_existing: true
+    validate_expressions: true
+```
+
+### Data Enrichment
+
+**Purpose**: Enrich data with additional information
+
+**Configuration**:
+```yaml
+type: transformation
+name: enrich-data
+config:
+  strategy: "enrichment"       # Required: Strategy type
+  source: string               # Enrichment source
+  mappings: object              # Enrichment mappings
+  options: object              # Enrichment options
+```
+
+**Examples**:
+```yaml
+type: transformation
+name: enrich-with-geo-data
+config:
+  strategy: "enrichment"
+  source: "geocoding_api"
+  mappings:
+    latitude:
+      lookup_field: "postal_code"
+      lookup_value: "latitude"
+    longitude:
+      lookup_field: "postal_code"
+      lookup_value: "longitude"
+    city:
+      lookup_field: "postal_code"
+      lookup_value: "city"
+    state:
+      lookup_field: "postal_code"
+      lookup_value: "state"
+  options:
+    cache_results: true
+    cache_ttl: 86400
+    fallback_value: null
+    batch_size: 100
+```
+
+### Aggregation
+
+**Purpose**: Aggregate data for summary statistics
+
+**Configuration**:
+```yaml
+type: transformation
+name: aggregate-data
+config:
+  strategy: "aggregation"      # Required: Strategy type
+  group_by: array              # Group by fields
+  aggregations: object        # Aggregation functions
+  options: object              # Aggregation options
+```
+
+**Examples**:
+```yaml
+type: transformation
+name: aggregate-customer-data
+config:
+  strategy: "aggregation"
+  group_by: ["customer_id", "customer_segment"]
+  aggregations:
+    total_orders:
+      function: "count"
+      field: "order_id"
+    total_amount:
+      function: "sum"
+      field: "order_amount"
+    avg_order_value:
+      function: "avg"
+      field: "order_amount"
+    first_order_date:
+      function: "min"
+      field: "order_date"
+    last_order_date:
+      function: "max"
+      field: "order_date"
+    unique_products:
+      function: "count_distinct"
+      field: "product_id"
+  options:
+    output_nulls: false
+    include_counts: true
+    sort_by: "total_amount"
+    sort_order: "desc"
+```
+
+### Data Joining
+
+**Purpose**: Join data from multiple sources
+
+**Configuration**:
+```yaml
+type: transformation
+name: join-data
+config:
+  strategy: "join"             # Required: Strategy type
+  left_source: string          # Left data source
+  right_source: string         # Right data source
+  join_type: string            # Join type
+  join_keys: array             # Join keys
+  options: object              # Join options
+```
+
+**Examples**:
+```yaml
+type: transformation
+name: join-customer-orders
+config:
+  strategy: "join"
+  left_source: "customers"
+  right_source: "orders"
+  join_type: "left"            # Options: inner, left, right, full
+  join_keys: ["customer_id"]
+  options:
+    right_prefix: "order_"
+    handle_nulls: "keep"
+    validate_keys: true
+```
+
+## Augmentation Stages
+
+### Outlier Detection
+
+**Purpose**: Detect anomalies in data using ML algorithms
+
+**Configuration**:
+```yaml
+type: augmentation
+name: detect-outliers
+config:
+  service: "outlier_detection" # Required: Service name
+  algorithm: string             # Algorithm to use
+  parameters: object            # Algorithm parameters
+  fields: array                 # Fields to analyze
+  options: object               # Output options
+```
+
+**Examples**:
+```yaml
+type: augmentation
+name: detect-fraud-outliers
+config:
+  service: "outlier_detection"
+  algorithm: "isolation_forest"
+  parameters:
+    contamination: 0.05
+    n_estimators: 100
+    max_samples: "auto"
+    random_state: 42
+  fields: ["transaction_amount", "transaction_frequency", "merchant_category"]
+  options:
+    output_field: "is_fraud_outlier"
+    include_scores: true
+    score_field: "fraud_score"
+    threshold_method: "auto"
+```
+
+### Synthetic Data Generation
+
+**Purpose**: Generate synthetic data for testing and augmentation
+
+**Configuration**:
+```yaml
+type: augmentation
+name: generate-synthetic-data
+config:
+  service: "synthetic_generation" # Required: Service name
+  method: string                 # Generation method
+  parameters: object            # Method parameters
+  fields: array                 # Fields to generate
+  options: object               # Generation options
+```
+
+**Examples**:
+```yaml
+type: augmentation
+name: generate-synthetic-customers
+config:
+  service: "synthetic_generation"
+  method: "vae"
+  parameters:
+    architecture:
+      encoder: [64, 32, 16]
+      latent_dim: 8
+      decoder: [16, 32, 64]
+    epochs: 100
+    batch_size: 32
+    learning_rate: 0.001
+  fields: ["age", "income", "credit_score"]
+  options:
+    output_records: 1000
+    preserve_privacy: true
+    epsilon: 1.0
+    output_format: "append"
+```
+
+### Feature Engineering
+
+**Purpose**: Create new features using ML techniques
+
+**Configuration**:
+```yaml
+type: augmentation
+name: engineer-features
+config:
+  service: "feature_engineering" # Required: Service name
+  features: array               # Feature definitions
+  options: object               # Feature options
+```
+
+**Examples**:
+```yaml
+type: augmentation
+name: engineer-features
+config:
+  service: "feature_engineering"
+  features:
+    - name: "age_group"
+      type: "binning"
+      field: "age"
+      bins: [0, 18, 30, 45, 60, 100]
+      labels: ["child", "young_adult", "adult", "middle_aged", "senior"]
+    - name: "income_per_age"
+      type: "ratio"
+      numerator: "income"
+      denominator: "age"
+    - name: "customer_lifetime_days"
+      type: "duration"
+      start_field: "first_purchase_date"
+      end_field: "last_purchase_date"
+    - name: "purchase_frequency_score"
+      type: "scaling"
+      field: "purchase_count"
+      method: "min_max"
+  options:
+    validate_features: true
+    handle_errors: "skip"
+```
+
+## Output Stages
+
+### File Output
+
+**Purpose**: Write data to files
+
+**Configuration**:
+```yaml
+type: output
+name: write-to-files
+config:
+  destination: string          # Output destination
+  format: string               # Output format
+  options: object              # Format-specific options
+  credentials: object         # Authentication credentials
+```
+
+**Examples**:
+
+#### CSV Output
+```yaml
+type: output
+name: write-to-csv
+config:
+  destination: "s3://output/processed-data/"
+  format: "csv"
+  options:
+    header: true
+    delimiter: ","
+    quote: "\""
+    escape: "\\"
+    null_value: ""
+    date_format: "yyyy-MM-dd"
+    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+    encoding: "UTF-8"
+    compression: "gzip"
+    file_naming: "output-{timestamp}-{uuid}.csv"
+    partition_by: ["year", "month", "day"]
+  credentials:
+    access_key_id: ${AWS_ACCESS_KEY_ID}
+    secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+    region: "us-east-1"
+```
+
+#### Parquet Output
+```yaml
+type: output
+name: write-to-parquet
+config:
+  destination: "s3://output/processed-data/"
+  format: "parquet"
+  options:
+    compression: "snappy"
+    partition_by: ["year", "month", "day"]
+    file_naming: "output-{timestamp}-{uuid}.parquet"
+    create_path: true
+    overwrite: true
+    write_mode: "overwrite"     # Options: overwrite, append, error
+```
+
+### Database Output
+
+**Purpose**: Write data to databases
+
+**Configuration**:
+```yaml
+type: output
+name: write-to-database
+config:
+  destination: "database"
+  connection: object            # Database connection details
+  table: string                 # Target table
+  mode: string                  # Write mode
+  options: object              # Write options
+```
+
+**Examples**:
+```yaml
+type: output
+name: write-to-postgres
+config:
+  destination: "postgresql"
+  connection:
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    database: ${POSTGRES_DATABASE}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    sslmode: "require"
+  table: "processed_customers"
+  mode: "append"                # Options: append, overwrite, merge, update
+  options:
+    batch_size: 10000
+    create_table_if_not_exists: true
+    auto_detect_schema: true
+    parallel_writes: true
+    max_parallel_writers: 2
+    conflict_strategy: "ignore"
+```
+
+### API Output
+
+**Purpose**: Send data to external APIs
+
+**Configuration**:
+```yaml
+type: output
+name: send-to-api
+config:
+  destination: "api"
+  endpoint: string             # API endpoint
+  method: string               # HTTP method
+  headers: object              # HTTP headers
+  authentication: object        # Authentication
+  options: object              # Request options
+```
+
+**Examples**:
+```yaml
+type: output
+name: send-to-webhook
+config:
+  destination: "api"
+  endpoint: "https://api.example.com/webhook"
+  method: "POST"
+  headers:
+    "Content-Type": "application/json"
+    "Authorization": "Bearer ${WEBHOOK_TOKEN}"
+  authentication:
+    type: "bearer_token"
+    token: ${WEBHOOK_TOKEN}
+  options:
+    batch_size: 100
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+    success_codes: [200, 201, 202]
+```
+
+## Advanced Configuration
+
+### Stage Dependencies
+
+**Purpose**: Define execution dependencies between stages
+
+**Configuration**:
+```yaml
+stages:
+  - type: ingestion
+    name: load-data
+    config: {...}
+    dependencies: []             # No dependencies
+    
+  - type: cleaning
+    name: clean-data
+    config: {...}
+    dependencies: ["load-data"]  # Depends on load-data
+    
+  - type: validation
+    name: validate-data
+    config: {...}
+    dependencies: ["clean-data"] # Depends on clean-data
+    
+  - type: output
+    name: save-data
+    config: {...}
+    dependencies: ["validate-data"] # Depends on validate-data
+```
+
+### Conditional Execution
+
+**Purpose**: Execute stages based on conditions
+
+**Configuration**:
+```yaml
+stages:
+  - type: cleaning
+    name: clean-data
+    config: {...}
+    condition:
+      type: "expression"
+      expression: "data_quality_score > 0.8"
+    
+  - type: augmentation
+    name: detect-outliers
+    config: {...}
+    condition:
+      type: "field_exists"
+      field: "transaction_amount"
+    
+  - type: transformation
+    name: enrich-data
+    config: {...}
+    condition:
+      type: "environment"
+      variable: "ENABLE_ENRICHMENT"
+      value: "true"
+```
+
+### Error Handling
+
+**Purpose**: Define error handling strategies
+
+**Configuration**:
+```yaml
+stages:
+  - type: ingestion
+    name: load-data
+    config: {...}
+    error_handling:
+      strategy: "retry"          # Options: retry, skip, fail
+      max_attempts: 3
+      retry_delay: 30
+      exponential_backoff: true
+      on_failure: "log_error"   # Options: log_error, send_alert, stop_pipeline
+    
+  - type: validation
+    name: validate-data
+    config: {...}
+    error_handling:
+      strategy: "continue"
+      collect_errors: true
+      error_output_field: "validation_errors"
+      max_error_percentage: 10
+```
+
+### Performance Optimization
+
+**Purpose**: Optimize stage performance
+
+**Configuration**:
+```yaml
+stages:
+  - type: ingestion
+    name: load-data
+    config: {...}
+    performance:
+      parallel_processing: true
+      max_workers: 4
+      batch_size: 10000
+      memory_limit: "2GB"
+      cache_intermediate_results: true
+    
+  - type: transformation
+    name: transform-data
+    config: {...}
+    performance:
+      use_spark: true
+      spark_config:
+        spark.executor.memory: "2g"
+        spark.executor.cores: "2"
+        spark.sql.shuffle.partitions: "200"
+```
+
+This comprehensive stage reference provides detailed information about all available pipeline stages, their configuration options, and practical examples for implementation.
