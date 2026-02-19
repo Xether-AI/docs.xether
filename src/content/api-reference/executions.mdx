@@ -1,0 +1,488 @@
+---
+title: Executions API
+description: Complete reference for pipeline execution monitoring and management endpoints
+---
+
+# Executions API
+
+The Executions API allows you to monitor, manage, and retrieve information about pipeline executions. All endpoints require authentication via a valid API token.
+
+## Base URL
+```
+https://api.xether.ai/v1/executions
+```
+
+## Endpoints
+
+### List Executions
+
+Retrieves a paginated list of pipeline executions with filtering options.
+
+**Endpoint:** `GET /v1/executions`
+
+**Query Parameters:**
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 20, max: 100)
+- `pipeline_id` (string, optional): Filter by pipeline ID
+- `status` (string, optional): Filter by status (pending, running, completed, failed, cancelled)
+- `date_from` (string, optional): Filter executions from this date (ISO 8601)
+- `date_to` (string, optional): Filter executions until this date (ISO 8601)
+- `sort` (string, optional): Sort field (created_at, started_at, completed_at, duration)
+- `order` (string, optional): Sort order (asc, desc, default: desc)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "exec_1234567890",
+      "pipeline_id": "pipe_9876543210",
+      "pipeline_name": "customer-data-processing",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "created_at": "2024-01-20T02:00:00Z",
+      "started_at": "2024-01-20T02:00:15Z",
+      "completed_at": "2024-01-20T02:15:30Z",
+      "duration_seconds": 975,
+      "parameters": {
+        "date_range": {
+          "start": "2024-01-19",
+          "end": "2024-01-19"
+        }
+      },
+      "result": {
+        "records_processed": 125000,
+        "records_output": 124850,
+        "stages_completed": 4,
+        "stages_failed": 0
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 156,
+    "pages": 8
+  }
+}
+```
+
+### Get Execution Details
+
+Retrieves detailed information about a specific execution.
+
+**Endpoint:** `GET /v1/executions/{id}`
+
+**Path Parameters:**
+- `id` (string): Execution ID
+
+**Response:**
+```json
+{
+  "id": "exec_1234567890",
+  "pipeline_id": "pipe_9876543210",
+  "pipeline_name": "customer-data-processing",
+  "status": "completed",
+  "triggered_by": "schedule",
+  "created_at": "2024-01-20T02:00:00Z",
+  "started_at": "2024-01-20T02:00:15Z",
+  "completed_at": "2024-01-20T02:15:30Z",
+  "duration_seconds": 975,
+  "parameters": {
+    "date_range": {
+      "start": "2024-01-19",
+      "end": "2024-01-19"
+    },
+    "batch_size": 1000
+  },
+  "environment": {
+    "compute": "standard",
+    "memory": "4GB",
+    "timeout": 3600
+  },
+  "stages": [
+    {
+      "name": "load-customer-data",
+      "type": "ingestion",
+      "status": "completed",
+      "started_at": "2024-01-20T02:00:15Z",
+      "completed_at": "2024-01-20T02:05:20Z",
+      "duration_seconds": 305,
+      "result": {
+        "records_read": 125000,
+        "files_processed": 5,
+        "data_size_bytes": 52428800
+      }
+    },
+    {
+      "name": "remove-duplicates",
+      "type": "cleaning",
+      "status": "completed",
+      "started_at": "2024-01-20T02:05:25Z",
+      "completed_at": "2024-01-20T02:08:45Z",
+      "duration_seconds": 200,
+      "result": {
+        "records_input": 125000,
+        "records_output": 124850,
+        "duplicates_removed": 150
+      }
+    },
+    {
+      "name": "validate-emails",
+      "type": "validation",
+      "status": "completed",
+      "started_at": "2024-01-20T02:08:50Z",
+      "completed_at": "2024-01-20T02:12:10Z",
+      "duration_seconds": 200,
+      "result": {
+        "records_validated": 124850,
+        "records_valid": 124500,
+        "records_invalid": 350,
+        "validation_errors": [
+          {
+            "field": "email",
+            "error": "invalid_format",
+            "count": 350
+          }
+        ]
+      }
+    },
+    {
+      "name": "normalize-phones",
+      "type": "transformation",
+      "status": "completed",
+      "started_at": "2024-01-20T02:12:15Z",
+      "completed_at": "2024-01-20T02:15:30Z",
+      "duration_seconds": 195,
+      "result": {
+        "records_transformed": 124500,
+        "fields_normalized": 124500,
+        "transformations_applied": ["phone_format"]
+      }
+    }
+  ],
+  "result": {
+    "records_processed": 125000,
+    "records_output": 124500,
+    "stages_completed": 4,
+    "stages_failed": 0,
+    "output_datasets": [
+      {
+        "dataset_id": "ds_output_123",
+        "version": 15,
+        "record_count": 124500
+      }
+    ]
+  },
+  "error": null
+}
+```
+
+**Status Codes:**
+- `200 OK`: Execution retrieved successfully
+- `404 Not Found`: Execution not found
+
+### Get Execution Logs
+
+Retrieves the execution logs for a specific execution.
+
+**Endpoint:** `GET /v1/executions/{id}/logs`
+
+**Path Parameters:**
+- `id` (string): Execution ID
+
+**Query Parameters:**
+- `stage` (string, optional): Filter logs by stage name
+- `level` (string, optional): Filter by log level (debug, info, warn, error)
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 100, max: 1000)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "timestamp": "2024-01-20T02:00:15.123Z",
+      "level": "info",
+      "stage": "load-customer-data",
+      "message": "Starting data ingestion from S3",
+      "metadata": {
+        "source": "s3://bucket/customers/",
+        "files": 5
+      }
+    },
+    {
+      "timestamp": "2024-01-20T02:05:18.456Z",
+      "level": "info",
+      "stage": "load-customer-data",
+      "message": "Successfully loaded 125,000 records",
+      "metadata": {
+        "records": 125000,
+        "duration_ms": 305000
+      }
+    },
+    {
+      "timestamp": "2024-01-20T02:08:42.789Z",
+      "level": "warn",
+      "stage": "validate-emails",
+      "message": "Found 350 invalid email formats",
+      "metadata": {
+        "invalid_count": 350,
+        "total_validated": 124850
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 100,
+    "total": 1247,
+    "pages": 13
+  }
+}
+```
+
+### Cancel Execution
+
+Cancels a running or pending execution.
+
+**Endpoint:** `POST /v1/executions/{id}/cancel`
+
+**Path Parameters:**
+- `id` (string): Execution ID
+
+**Request Body (optional):**
+```json
+{
+  "reason": "Manual cancellation - data issue discovered"
+}
+```
+
+**Response:**
+```json
+{
+  "execution_id": "exec_1234567890",
+  "status": "cancelled",
+  "cancelled_at": "2024-01-20T02:10:00Z",
+  "reason": "Manual cancellation - data issue discovered",
+  "progress": {
+    "stages_completed": 2,
+    "stages_total": 4,
+    "percentage_complete": 50
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Execution cancelled successfully
+- `404 Not Found`: Execution not found
+- `409 Conflict`: Execution cannot be cancelled (already completed/failed)
+
+### Get Execution Metrics
+
+Retrieves detailed performance metrics for an execution.
+
+**Endpoint:** `GET /v1/executions/{id}/metrics`
+
+**Path Parameters:**
+- `id` (string): Execution ID
+
+**Response:**
+```json
+{
+  "execution_id": "exec_1234567890",
+  "pipeline_id": "pipe_9876543210",
+  "metrics": {
+    "performance": {
+      "total_duration_seconds": 975,
+      "cpu_usage_percent": 75.5,
+      "memory_usage_mb": 3072,
+      "disk_io_mb": 1024,
+      "network_io_mb": 512
+    },
+    "data_processing": {
+      "records_processed_per_second": 128.2,
+      "data_throughput_mb_per_second": 53.8,
+      "peak_memory_usage_mb": 3584,
+      "temporary_storage_mb": 2048
+    },
+    "stages": [
+      {
+        "name": "load-customer-data",
+        "duration_seconds": 305,
+        "records_processed": 125000,
+        "throughput_records_per_second": 409.8,
+        "cpu_usage_percent": 82.3,
+        "memory_usage_mb": 2048
+      },
+      {
+        "name": "remove-duplicates",
+        "duration_seconds": 200,
+        "records_processed": 125000,
+        "throughput_records_per_second": 625.0,
+        "cpu_usage_percent": 68.7,
+        "memory_usage_mb": 1536
+      }
+    ],
+    "cost": {
+      "compute_cost_usd": 0.025,
+      "storage_cost_usd": 0.008,
+      "network_cost_usd": 0.002,
+      "total_cost_usd": 0.035
+    }
+  },
+  "generated_at": "2024-01-20T02:15:35Z"
+}
+```
+
+### Retry Execution
+
+Retries a failed execution with the same parameters.
+
+**Endpoint:** `POST /v1/executions/{id}/retry`
+
+**Path Parameters:**
+- `id` (string): Execution ID
+
+**Request Body (optional):**
+```json
+{
+  "retry_failed_stages_only": true,
+  "parameters": {
+    "batch_size": 500,
+    "timeout": 7200
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "original_execution_id": "exec_1234567890",
+  "new_execution_id": "exec_9876543210",
+  "status": "pending",
+  "created_at": "2024-01-20T14:30:00Z",
+  "estimated_start": "2024-01-20T14:31:00Z",
+  "retry_config": {
+    "retry_failed_stages_only": true,
+    "failed_stages": ["validate-emails"]
+  }
+}
+```
+
+**Status Codes:**
+- `201 Created`: Execution retry created successfully
+- `404 Not Found`: Original execution not found
+- `409 Conflict`: Execution cannot be retried (not failed)
+
+## Execution Status Lifecycle
+
+Executions progress through these status states:
+
+1. **`pending`**: Execution created, waiting to start
+2. **`running`**: Execution is actively processing
+3. **`completed`**: Execution finished successfully
+4. **`failed`**: Execution failed due to error
+5. **`cancelled`**: Execution was manually cancelled
+6. **`timeout`**: Execution exceeded time limit
+
+## Real-time Updates
+
+For real-time execution status updates, use WebSocket connections:
+
+```javascript
+const ws = new WebSocket('wss://api.xether.ai/v1/executions/exec_1234567890/ws');
+
+ws.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  console.log('Status update:', update);
+};
+```
+
+**WebSocket Message Format:**
+```json
+{
+  "type": "status_update",
+  "execution_id": "exec_1234567890",
+  "status": "running",
+  "timestamp": "2024-01-20T02:05:00Z",
+  "stage": "remove-duplicates",
+  "progress": {
+    "stages_completed": 1,
+    "stages_total": 4,
+    "percentage_complete": 25
+  }
+}
+```
+
+## SDK Examples
+
+### Python
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# List executions
+executions = client.executions.list(
+    status="completed",
+    date_from="2024-01-01",
+    limit=50
+)
+
+# Get execution details
+execution = client.executions.get("exec_1234567890")
+
+# Get execution logs
+logs = client.executions.logs("exec_1234567890", level="error")
+
+# Cancel execution
+client.executions.cancel("exec_1234567890", reason="Manual cancellation")
+
+# Get metrics
+metrics = client.executions.metrics("exec_1234567890")
+
+# Retry failed execution
+retry = client.executions.retry("exec_1234567890", retry_failed_stages_only=True)
+```
+
+### JavaScript
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// List executions
+const executions = await client.executions.list({
+  status: 'completed',
+  date_from: '2024-01-01',
+  limit: 50
+});
+
+// Get execution details
+const execution = await client.executions.get('exec_1234567890');
+
+// Get execution logs
+const logs = await client.executions.logs('exec_1234567890', { level: 'error' });
+
+// Cancel execution
+await client.executions.cancel('exec_1234567890', 'Manual cancellation');
+
+// Get metrics
+const metrics = await client.executions.metrics('exec_1234567890');
+
+// Retry failed execution
+const retry = await client.executions.retry('exec_1234567890', {
+  retry_failed_stages_only: true
+});
+```
+
+## Best Practices
+
+- **Monitor execution progress** using status updates and metrics
+- **Set appropriate timeouts** to prevent hanging executions
+- **Implement retry logic** for transient failures
+- **Use logs for debugging** failed executions
+- **Track execution costs** for budget management
+- **Set up alerts** for failed or long-running executions
+- **Archive old executions** to maintain performance
+- **Use real-time updates** for responsive monitoring dashboards
