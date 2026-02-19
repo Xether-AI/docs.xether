@@ -30,26 +30,43 @@ export function FeedbackWidget() {
 
     setIsSubmitting(true);
     
-    const feedbackData: FeedbackData = {
+    const feedbackData = {
       page: pathname,
       helpful: feedback,
       comment: comment.trim() || undefined,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     try {
-      // Store feedback in localStorage for demo purposes
-      const existingFeedback = JSON.parse(localStorage.getItem('docs_feedback') || '[]');
-      existingFeedback.push(feedbackData);
-      localStorage.setItem('docs_feedback', JSON.stringify(existingFeedback));
+      // Send feedback to API
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
       
-      // In a real app, this would send to an API
-      console.log('Feedback submitted:', feedbackData);
+      // Also store in localStorage as backup
+      const existingFeedback = JSON.parse(localStorage.getItem('docs_feedback') || '[]');
+      existingFeedback.push({ ...feedbackData, timestamp: new Date(feedbackData.timestamp) });
+      localStorage.setItem('docs_feedback', JSON.stringify(existingFeedback));
       
       setSubmitted(true);
       setShowCommentBox(false);
     } catch (error) {
       console.error('Failed to submit feedback:', error);
+      // Fallback to localStorage if API fails
+      const existingFeedback = JSON.parse(localStorage.getItem('docs_feedback') || '[]');
+      existingFeedback.push({ ...feedbackData, timestamp: new Date(feedbackData.timestamp) });
+      localStorage.setItem('docs_feedback', JSON.stringify(existingFeedback));
+      
+      setSubmitted(true);
+      setShowCommentBox(false);
     } finally {
       setIsSubmitting(false);
     }
