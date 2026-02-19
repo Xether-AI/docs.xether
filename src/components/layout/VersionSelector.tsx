@@ -51,7 +51,7 @@ export function VersionSelector() {
           
           {/* Dropdown */}
           <div className={cn(
-            "absolute top-full left-0 mt-1 min-w-[200px]",
+            "absolute top-full left-0 mt-1 min-w-[250px]",
             "bg-background/95 backdrop-blur-sm border rounded-md shadow-lg z-20",
             "py-1"
           )} style={{ borderColor: "var(--border)" }}>
@@ -60,21 +60,35 @@ export function VersionSelector() {
                 key={version.value}
                 onClick={() => {
                   setIsOpen(false);
-                  // In a real app, this would handle version switching
-                  console.log(`Switch to version: ${version.value}`);
+                  // Handle version switching by redirecting to the same page in the new version
+                  const currentPath = pathname.replace(currentVersion.path, version.path);
+                  router.push(currentPath);
                 }}
                 className={cn(
-                  "w-full px-3 py-1.5 text-left text-sm cursor-pointer",
-                  "hover:bg-accent/10 transition-colors",
-                  version.current && "text-primary font-medium"
+                  "w-full px-3 py-2 text-left text-sm cursor-pointer",
+                  "hover:bg-accent/10 transition-colors flex items-center justify-between",
+                  version.current && "text-primary font-medium",
+                  version.deprecated && "text-muted-foreground"
                 )}
               >
-                {version.label}
-                {version.current && (
-                  <span className="ml-2 text-xs text-muted-foreground cursor-pointer">
-                    (current)
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <span>{version.label}</span>
+                  {version.deprecated && (
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {version.current && (
+                    <span className="text-xs text-muted-foreground">
+                      (current)
+                    </span>
+                  )}
+                  {version.stable && !version.current && (
+                    <span className="text-xs text-green-600">
+                      (stable)
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
