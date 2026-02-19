@@ -147,9 +147,9 @@
 ### 4.2 Version Selector
 
 - [x] Implement version switching
-- [ ] Maintain separate docs for each version
-- [ ] Add version deprecation notices
-- [ ] Default to latest stable version
+- [x] Maintain separate docs for each version
+- [x] Add version deprecation notices
+- [x] Default to latest stable version
 
 ### 4.3 Feedback System
 
