@@ -32,12 +32,12 @@ export function Card({ title, href, children, className }: CardProps) {
         />
       </div>
       {children && (
-        <p
+        <div
           className="text-sm leading-relaxed"
           style={{ color: "var(--muted-foreground)" }}
         >
           {children}
-        </p>
+        </div>
       )}
     </Link>
   );
