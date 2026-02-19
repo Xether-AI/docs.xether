@@ -1,0 +1,560 @@
+---
+title: PostgreSQL Integration
+description: Complete guide for integrating Xether AI with PostgreSQL
+---
+
+# PostgreSQL Integration
+
+This guide covers how to connect Xether AI to PostgreSQL for data ingestion, transformation, and output. PostgreSQL is a powerful open-source relational database commonly used for transactional and analytical workloads.
+
+## Prerequisites
+
+- PostgreSQL server (version 12 or higher recommended)
+- Database and user with appropriate permissions
+- Network connectivity between Xether AI and PostgreSQL
+- Xether AI account with pipeline creation permissions
+
+## Authentication Setup
+
+### Basic Authentication
+
+```yaml
+credentials:
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
+  database: ${POSTGRES_DATABASE}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  sslmode: require
+```
+
+### Connection String
+
+```yaml
+credentials:
+  connection_string: ${POSTGRES_CONNECTION_STRING}
+  # Example: postgresql://user:password@host:port/database?sslmode=require
+```
+
+### SSL/TLS Configuration
+
+```yaml
+credentials:
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
+  database: ${POSTGRES_DATABASE}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  sslmode: require
+  sslcert: ${POSTGRES_SSL_CERT}
+  sslkey: ${POSTGRES_SSL_KEY}
+  sslrootcert: ${POSTGRES_SSL_ROOT_CERT}
+```
+
+## Required Permissions
+
+The PostgreSQL user needs these minimum privileges:
+
+```sql
+-- Connect to database
+GRANT CONNECT ON DATABASE your_database TO your_user;
+
+-- Schema usage
+GRANT USAGE ON SCHEMA public TO your_user;
+
+-- Read permissions
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO your_user;
+
+-- Write permissions (if outputting to PostgreSQL)
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO your_user;
+GRANT CREATE ON SCHEMA public TO your_user;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO your_user;
+
+-- Future tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO your_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT INSERT, UPDATE, DELETE ON TABLES TO your_user;
+```
+
+## Pipeline Configuration
+
+### Basic PostgreSQL Ingestion
+
+```yaml
+name: postgres-data-ingestion
+description: Ingest data from PostgreSQL table
+datasets:
+  input: postgres-raw-data
+  output: processed-data
+stages:
+  - type: ingestion
+    name: load-from-postgres
+    config:
+      source: postgresql
+      credentials:
+        host: ${POSTGRES_HOST}
+        port: ${POSTGRES_PORT}
+        database: ${POSTGRES_DATABASE}
+        user: ${POSTGRES_USER}
+        password: ${POSTGRES_PASSWORD}
+        sslmode: require
+      query: |
+        SELECT 
+          customer_id,
+          email,
+          created_at,
+          updated_at
+        FROM customers
+        WHERE created_at >= '2024-01-01'
+      options:
+        batch_size: 10000
+        max_rows: 1000000
+        timeout_seconds: 3600
+```
+
+### Advanced PostgreSQL Configuration
+
+```yaml
+stages:
+  - type: ingestion
+    name: advanced-postgres-load
+    config:
+      source: postgresql
+      credentials:
+        host: ${POSTGRES_HOST}
+        port: ${POSTGRES_PORT}
+        database: ${POSTGRES_DATABASE}
+        user: ${POSTGRES_USER}
+        password: ${POSTGRES_PASSWORD}
+        sslmode: require
+        connection_pool_size: 5
+        connection_timeout_seconds: 300
+      query: |
+        WITH customer_orders AS (
+          SELECT 
+            c.customer_id,
+            c.email,
+            c.created_at as customer_created,
+            o.order_id,
+            o.order_date,
+            o.amount,
+            o.status
+          FROM customers c
+          LEFT JOIN orders o ON c.customer_id = o.customer_id
+          WHERE c.created_at >= NOW() - INTERVAL '3 months'
+        )
+        SELECT * FROM customer_orders
+      options:
+        batch_size: 50000
+        max_rows: 5000000
+        timeout_seconds: 7200
+        parallel_reads: true
+        max_parallel_readers: 4
+        use_cursor: true
+        fetch_size: 10000
+```
+
+### PostgreSQL Output Configuration
+
+```yaml
+stages:
+  - type: output
+    name: write-to-postgres
+    config:
+      destination: postgresql
+      credentials:
+        host: ${POSTGRES_HOST}
+        port: ${POSTGRES_PORT}
+        database: ${POSTGRES_DATABASE}
+        user: ${POSTGRES_USER}
+        password: ${POSTGRES_PASSWORD}
+        sslmode: require
+      table: processed_customers
+      mode: append  # Options: append, overwrite, merge, update
+      options:
+        create_table_if_not_exists: true
+        auto_detect_schema: true
+        batch_size: 10000
+        parallel_writes: true
+        max_parallel_writers: 2
+        use_copy: true  # Use COPY command for bulk loading
+        conflict_strategy: ignore  # Options: ignore, update, error
+```
+
+## Query Optimization
+
+### Query Best Practices
+
+1. **Use WHERE clauses** to limit data volume
+2. **Select specific columns** instead of SELECT *
+3. **Use appropriate indexes** for filter columns
+4. **Use LIMIT** for large result sets
+5. **Avoid expensive operations** like subqueries without proper indexing
+
+### Optimized Query Example
+```yaml
+config:
+  query: |
+    SELECT 
+      customer_id,
+      email,
+      created_at,
+      CASE 
+        WHEN last_order_date >= NOW() - INTERVAL '30 days' 
+        THEN 'active'
+        ELSE 'inactive'
+      END as customer_status
+    FROM customers
+    WHERE created_at >= NOW() - INTERVAL '1 year'
+      AND email IS NOT NULL
+    ORDER BY created_at DESC
+    LIMIT 1000000
+```
+
+### Using Indexes Effectively
+```yaml
+config:
+  query: |
+    -- Ensure created_at and email columns are indexed
+    SELECT customer_id, email, created_at
+    FROM customers
+    WHERE created_at >= '2024-01-01'  -- Uses created_at index
+      AND email LIKE '%@company.com'   -- May not use index effectively
+    ORDER BY created_at DESC           -- Uses created_at index
+```
+
+## Performance Tuning
+
+### Connection Pooling
+```yaml
+config:
+  credentials:
+    connection_pool_size: 10
+    connection_timeout_seconds: 300
+    idle_timeout_seconds: 600
+    max_retries: 3
+    retry_delay_seconds: 30
+```
+
+### Batch Processing
+```yaml
+config:
+  options:
+    batch_size: 50000  # Optimize based on memory and network
+    max_rows: 5000000  # Limit total rows processed
+    parallel_reads: true
+    max_parallel_readers: 4
+    use_cursor: true
+    fetch_size: 10000
+```
+
+### Bulk Loading with COPY
+```yaml
+config:
+  options:
+    use_copy: true  # Use PostgreSQL COPY for bulk loading
+    copy_options:
+      delimiter: ","
+      header: true
+      encoding: "UTF-8"
+      null: "\\N"
+      escape: "\\"
+```
+
+## Data Type Mapping
+
+| PostgreSQL Type | Xether AI Type | Notes |
+|-----------------|----------------|-------|
+| INTEGER | integer | 32-bit integer |
+| BIGINT | long | 64-bit integer |
+| SMALLINT | short | 16-bit integer |
+| DECIMAL/NUMERIC | decimal | Precision and scale preserved |
+| REAL | float | Single precision |
+| DOUBLE PRECISION | double | Double precision |
+| BOOLEAN | boolean | True/False values |
+| VARCHAR/TEXT | string | Variable length string |
+| CHAR | string | Fixed length string |
+| DATE | date | Date without time |
+| TIME | time | Time without date |
+| TIMESTAMP | timestamp | Timestamp without timezone |
+| TIMESTAMPTZ | timestamp | Timestamp with timezone |
+| UUID | string | UUID as string |
+| JSON/JSONB | object | JSON-like structure |
+| ARRAY | array | Array of values |
+| BYTEA | binary | Binary data |
+
+## Schema Evolution
+
+### Auto Schema Detection
+```yaml
+config:
+  options:
+    auto_detect_schema: true
+    schema_evolution: true
+    handle_new_columns: add  # Options: add, ignore, error
+    handle_missing_columns: null  # Options: null, error, default
+```
+
+### Manual Schema Definition
+```yaml
+config:
+  schema:
+    type: struct
+    fields:
+      - name: customer_id
+        type: integer
+        nullable: false
+      - name: email
+        type: string
+        nullable: false
+      - name: created_at
+        type: timestamp
+        nullable: false
+      - name: order_count
+        type: integer
+        nullable: true
+```
+
+## Error Handling
+
+### Retry Configuration
+```yaml
+config:
+  retry:
+    max_attempts: 3
+    backoff_seconds: 30
+    exponential_backoff: true
+    retry_on_errors:
+      - "connection timeout"
+      - "query timeout"
+      - "connection refused"
+      - "deadlock detected"
+  error_handling:
+    continue_on_query_error: false
+    log_query_errors: true
+    validate_sql: true
+```
+
+### Transaction Handling
+```yaml
+config:
+  options:
+    use_transaction: true
+    isolation_level: read_committed  # Options: read_uncommitted, read_committed, repeatable_read, serializable
+    auto_commit: false
+    rollback_on_error: true
+```
+
+## Monitoring and Logging
+
+### Query Performance Monitoring
+```yaml
+config:
+  monitoring:
+    log_query_plans: true
+    log_query_statistics: true
+    track_execution_time: true
+    track_rows_processed: true
+    track_bytes_transferred: true
+```
+
+### Connection Monitoring
+```yaml
+config:
+  monitoring:
+    log_connection_details: true
+    track_pool_usage: true
+    track_active_connections: true
+    log_slow_queries: true
+    slow_query_threshold_seconds: 30
+```
+
+## Security Best Practices
+
+### SSL/TLS Configuration
+```yaml
+config:
+  credentials:
+    sslmode: require  # Options: disable, allow, prefer, require, verify-ca, verify-full
+    sslcert: ${POSTGRES_CLIENT_CERT}
+    sslkey: ${POSTGRES_CLIENT_KEY}
+    sslrootcert: ${POSTGRES_CA_CERT}
+```
+
+### Network Security
+```yaml
+config:
+  credentials:
+    # Use connection string with SSL
+    connection_string: "postgresql://user:password@host:port/database?sslmode=require&sslrootcert=/path/to/ca.crt"
+    
+    # Or configure individual SSL parameters
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    sslmode: verify-full
+    sslrootcert: ${POSTGRES_CA_CERT}
+```
+
+### Row-Level Security
+```sql
+-- Enable row-level security
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for Xether AI
+CREATE POLICY xether_ai_policy ON customers
+    FOR ALL
+    TO xether_ai_user
+    USING (created_at >= NOW() - INTERVAL '1 year');
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Timeout
+- Check network connectivity
+- Verify firewall rules
+- Increase timeout values
+- Check PostgreSQL server load
+
+#### Query Timeout
+- Optimize query performance
+- Add appropriate indexes
+- Increase query timeout
+- Break large queries into smaller chunks
+
+#### Out of Memory
+- Reduce batch size
+- Use cursor-based fetching
+- Increase available memory
+- Optimize query
+
+#### Deadlock
+- Use consistent ordering in transactions
+- Reduce transaction size
+- Implement retry logic
+- Monitor deadlock frequency
+
+### Debug Configuration
+```yaml
+config:
+  debug:
+    log_sql_statements: true
+    log_connection_details: true
+    log_performance_metrics: true
+    log_explain_plans: true
+    verbose_errors: true
+```
+
+### Performance Analysis
+```yaml
+config:
+  options:
+    analyze_query: true  # Run EXPLAIN ANALYZE
+    log_query_plan: true
+    track_io_statistics: true
+```
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create PostgreSQL integration pipeline
+pipeline = client.pipelines.create(
+    name="postgres-integration",
+    config={
+        "datasets": {
+            "input": "postgres-raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-from-postgres",
+                "config": {
+                    "source": "postgresql",
+                    "credentials": {
+                        "host": os.getenv("POSTGRES_HOST"),
+                        "port": os.getenv("POSTGRES_PORT"),
+                        "database": os.getenv("POSTGRES_DATABASE"),
+                        "user": os.getenv("POSTGRES_USER"),
+                        "password": os.getenv("POSTGRES_PASSWORD"),
+                        "sslmode": "require"
+                    },
+                    "query": """
+                        SELECT customer_id, email, created_at
+                        FROM customers
+                        WHERE created_at >= NOW() - INTERVAL '1 month'
+                    """,
+                    "options": {
+                        "batch_size": 50000,
+                        "parallel_reads": True,
+                        "use_cursor": True
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create PostgreSQL integration pipeline
+const pipeline = await client.pipelines.create({
+  name: 'postgres-integration',
+  config: {
+    datasets: {
+      input: 'postgres-raw-data',
+      output: 'processed-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-from-postgres',
+        config: {
+          source: 'postgresql',
+          credentials: {
+            host: process.env.POSTGRES_HOST,
+            port: process.env.POSTGRES_PORT,
+            database: process.env.POSTGRES_DATABASE,
+            user: process.env.POSTGRES_USER,
+            password: process.env.POSTGRES_PASSWORD,
+            sslmode: 'require'
+          },
+          query: `
+            SELECT customer_id, email, created_at
+            FROM customers
+            WHERE created_at >= NOW() - INTERVAL '1 month'
+          `,
+          options: {
+            batch_size: 50000,
+            parallel_reads: true,
+            use_cursor: true
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+## Best Practices
+
+1. **Use SSL/TLS** for all connections
+2. **Implement connection pooling** for better performance
+3. **Use appropriate batch sizes** based on available memory
+4. **Optimize queries** with proper indexing
+5. **Monitor connection usage** and performance metrics
+6. **Use COPY command** for bulk loading operations
+7. **Implement proper error handling** and retry logic
+8. **Set up monitoring** for query performance and connection health
+9. **Use read replicas** for read-heavy workloads
+10. **Regularly maintain database** (vacuum, analyze, reindex)
