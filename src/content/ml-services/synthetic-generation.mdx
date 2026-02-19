@@ -1,0 +1,697 @@
+---
+title: Synthetic Data Generation
+description: Generate realistic synthetic data for testing, augmentation, and privacy protection
+---
+
+# Synthetic Data Generation
+
+Xether AI provides synthetic data generation capabilities to create realistic, privacy-preserving datasets for testing, development, and data augmentation. This service uses advanced machine learning techniques to generate data that maintains statistical properties while protecting sensitive information.
+
+## Overview
+
+Synthetic data generation helps you:
+- Protect privacy while sharing data
+- Augment training datasets
+- Generate test data for development
+- Balance imbalanced datasets
+- Create data for edge cases and scenarios
+
+## Supported Generation Methods
+
+### Statistical Methods
+
+#### Gaussian Mixture Models (GMM)
+Generates data by modeling the underlying probability distribution.
+
+**Best for:**
+- Numerical data
+- Multi-modal distributions
+- Preserving statistical properties
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: gmm
+      parameters:
+        n_components: 3  # Number of Gaussian components
+        covariance_type: full  # Options: full, tied, diag, spherical
+        random_state: 42
+        fields: ["age", "income", "credit_score"]
+        output_records: 1000
+        preserve_correlations: true
+```
+
+#### Kernel Density Estimation (KDE)
+Uses kernel density estimation to model data distribution.
+
+**Best for:**
+- Complex distributions
+- Non-parametric approach
+- Preserving local patterns
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: kde
+      parameters:
+        kernel: gaussian  # Options: gaussian, tophat, epanechnikov
+        bandwidth: scott  # Options: scott, silverman, or numeric value
+        fields: ["price", "quantity", "discount"]
+        output_records: 500
+        preserve_distribution: true
+```
+
+### Machine Learning Methods
+
+#### Variational Autoencoders (VAE)
+Deep learning approach for generating synthetic data.
+
+**Best for:**
+- High-dimensional data
+- Complex patterns
+- Tabular and image data
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: vae
+      parameters:
+        architecture:
+          encoder: [64, 32, 16]
+          latent_dim: 8
+          decoder: [16, 32, 64]
+        activation: relu
+        optimizer: adam
+        epochs: 100
+        batch_size: 32
+        learning_rate: 0.001
+        fields: ["feature1", "feature2", "feature3", "feature4"]
+        output_records: 1000
+        preserve_privacy: true
+        epsilon: 1.0  # Differential privacy parameter
+```
+
+#### Generative Adversarial Networks (GAN)
+Uses generator and discriminator networks for data generation.
+
+**Best for:**
+- High-quality synthetic data
+- Complex distributions
+- Tabular and time-series data
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: gan
+      parameters:
+        generator_architecture: [128, 64, 32]
+        discriminator_architecture: [32, 64, 128]
+        latent_dim: 16
+        epochs: 200
+        batch_size: 64
+        learning_rate: 0.0002
+        beta1: 0.5
+        fields: ["age", "income", "marital_status", "education"]
+        output_records: 2000
+        preserve_correlations: true
+        quality_threshold: 0.8
+```
+
+#### Tabular GAN (TGAN)
+Specialized GAN for tabular data with mixed data types.
+
+**Best for:**
+- Mixed data types (numerical, categorical)
+- Preserving column relationships
+- High-quality tabular data
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: tgan
+      parameters:
+        embedding_dim: 128
+        generator_dim: [256, 256]
+        discriminator_dim: [256, 256]
+        epochs: 300
+        batch_size: 500
+        log_frequency: True
+        fields: ["age", "gender", "income", "city", "purchase_amount"]
+        output_records: 5000
+        categorical_fields: ["gender", "city"]
+        numerical_fields: ["age", "income", "purchase_amount"]
+```
+
+### Rule-Based Methods
+
+#### Conditional Generation
+Generate data based on specific conditions and rules.
+
+**Best for:**
+- Scenario-based testing
+- Edge case generation
+- Business rule compliance
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: conditional
+      parameters:
+        rules:
+          - condition: "age >= 18 AND age <= 65"
+            probability: 0.8
+            constraints:
+              income: { min: 20000, max: 200000 }
+          - condition: "age < 18"
+            probability: 0.1
+            constraints:
+              income: { min: 0, max: 10000 }
+          - condition: "age > 65"
+            probability: 0.1
+            constraints:
+              income: { min: 15000, max: 150000 }
+        fields: ["age", "income", "employment_status"]
+        output_records: 1000
+        preserve_correlations: true
+```
+
+#### Template-Based Generation
+Generate data from predefined templates and patterns.
+
+**Best for:**
+- Structured data
+- Specific formats
+- Test data generation
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: template
+      parameters:
+        templates:
+          email: "user{number}@example.com"
+          phone: "+1-{area}-{exchange}-{number}"
+          ssn: "{ssn_format}"
+        constraints:
+          area: { range: [100, 999] }
+          exchange: { range: [100, 999] }
+          number: { range: [1000, 9999] }
+        fields: ["email", "phone", "ssn"]
+        output_records: 500
+        unique_values: true
+```
+
+## Configuration Options
+
+### Basic Configuration
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: gmm  # Required
+      parameters:
+        # Method-specific parameters
+        n_components: 3
+        
+        # Field selection
+        fields: ["field1", "field2"]  # Required
+        exclude_fields: ["id", "timestamp"]
+        
+        # Output configuration
+        output_records: 1000  # Required
+        output_format: table  # Options: table, json, csv
+        
+        # Data preservation
+        preserve_correlations: true
+        preserve_distribution: true
+        preserve_privacy: true
+```
+
+### Advanced Configuration
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: vae
+      parameters:
+        # Model architecture
+        architecture:
+          encoder: [128, 64, 32, 16]
+          latent_dim: 8
+          decoder: [16, 32, 64, 128]
+        activation: relu
+        dropout: 0.2
+        batch_normalization: true
+        
+        # Training parameters
+        epochs: 200
+        batch_size: 64
+        learning_rate: 0.001
+        optimizer: adam
+        loss_function: mse
+        
+        # Field configuration
+        fields: ["age", "income", "gender", "city", "purchase_history"]
+        categorical_fields: ["gender", "city"]
+        numerical_fields: ["age", "income"]
+        text_fields: ["purchase_history"]
+        
+        # Output configuration
+        output_records: 5000
+        output_format: table
+        output_path: "s3://synthetic-data/"
+        
+        # Privacy and quality
+        preserve_privacy: true
+        epsilon: 1.0  # Differential privacy
+        delta: 1e-5
+        quality_threshold: 0.85
+        similarity_threshold: 0.9
+        
+        # Data preservation
+        preserve_correlations: true
+        preserve_distribution: true
+        preserve_constraints: true
+        
+        # Constraints and rules
+        constraints:
+          age: { min: 18, max: 100 }
+          income: { min: 0, max: 1000000 }
+          gender: { values: ["male", "female", "other"] }
+        
+        # Performance
+        batch_processing: true
+        parallel_workers: 4
+        memory_limit_mb: 4096
+        
+        # Validation
+        validation_split: 0.2
+        quality_metrics:
+          - statistical_similarity
+          - correlation_preservation
+          - privacy_leakage
+          - utility_score
+```
+
+## Privacy Protection
+
+### Differential Privacy
+
+```yaml
+stages:
+  - type: augmentation
+    name: private-synthetic-data
+    config:
+      service: synthetic_generation
+      method: dp_gan
+      parameters:
+        # Differential privacy parameters
+        epsilon: 1.0  # Privacy budget (lower = more private)
+        delta: 1e-5  # Failure probability
+        noise_multiplier: 1.1
+        max_gradient_norm: 1.0
+        
+        # Model parameters
+        generator_dim: [256, 256]
+        discriminator_dim: [256, 256]
+        epochs: 300
+        batch_size: 500
+        
+        # Privacy monitoring
+        privacy_accounting: true
+        privacy_budget_tracking: true
+        privacy_alert_threshold: 0.9
+        
+        fields: ["age", "income", "medical_condition", "treatment"]
+        output_records: 1000
+        preserve_privacy: true
+```
+
+### Anonymization Techniques
+
+```yaml
+stages:
+  - type: augmentation
+    name: anonymized-synthetic-data
+    config:
+      service: synthetic_generation
+      method: anonymized_gmm
+      parameters:
+        # Anonymization settings
+        k_anonymity: 5  # Minimum group size
+        l_diversity: 3  # Minimum diversity in sensitive attributes
+        t_closeness: 0.2  # Maximum distribution distance
+        
+        # Quasi-identifiers
+        quasi_identifiers: ["age", "zip_code", "gender"]
+        sensitive_attributes: ["medical_condition"]
+        
+        # Generalization
+        generalization_rules:
+          age: { bins: [18, 30, 45, 60, 100] }
+          zip_code: { prefix_length: 3 }
+          income: { bins: [0, 30000, 60000, 100000, 200000] }
+        
+        fields: ["age", "zip_code", "gender", "income", "medical_condition"]
+        output_records: 2000
+        preserve_privacy: true
+```
+
+## Use Cases
+
+### Healthcare Data
+
+```yaml
+stages:
+  - type: augmentation
+    name: healthcare-synthetic-data
+    config:
+      service: synthetic_generation
+      method: dp_gan
+      parameters:
+        epsilon: 0.5  # Strong privacy for healthcare
+        fields:
+          - "patient_age"
+          - "diagnosis_code"
+          - "treatment_code"
+          - "medication"
+          - "lab_results"
+        categorical_fields: ["diagnosis_code", "treatment_code", "medication"]
+        numerical_fields: ["patient_age", "lab_results"]
+        output_records: 10000
+        preserve_correlations: true
+        constraints:
+          patient_age: { min: 0, max: 120 }
+          diagnosis_code: { format: "ICD-10" }
+```
+
+### Financial Data
+
+```yaml
+stages:
+  - type: augmentation
+    name: financial-synthetic-data
+    config:
+      service: synthetic_generation
+      method: tgan
+      parameters:
+        fields:
+          - "transaction_amount"
+          - "merchant_category"
+          - "location"
+          - "time_of_day"
+          - "customer_segment"
+        categorical_fields: ["merchant_category", "location", "customer_segment"]
+        numerical_fields: ["transaction_amount", "time_of_day"]
+        output_records: 50000
+        preserve_correlations: true
+        constraints:
+          transaction_amount: { min: 0, max: 100000 }
+          time_of_day: { min: 0, max: 23 }
+```
+
+### E-commerce Data
+
+```yaml
+stages:
+  - type: augmentation
+    name: ecommerce-synthetic-data
+    config:
+      service: synthetic_generation
+      method: conditional
+      parameters:
+        rules:
+          - condition: "customer_type = 'premium'"
+            probability: 0.2
+            constraints:
+              purchase_amount: { min: 100, max: 10000 }
+              purchase_frequency: { min: 5, max: 50 }
+          - condition: "customer_type = 'regular'"
+            probability: 0.8
+            constraints:
+              purchase_amount: { min: 10, max: 500 }
+              purchase_frequency: { min: 1, max: 10 }
+        fields: ["customer_type", "purchase_amount", "purchase_frequency", "product_category"]
+        output_records: 20000
+        preserve_correlations: true
+```
+
+## Quality Assessment
+
+### Statistical Similarity
+
+```yaml
+stages:
+  - type: augmentation
+    name: synthetic-data-generation
+    config:
+      service: synthetic_generation
+      method: vae
+      parameters:
+        # ... generation parameters ...
+        
+        # Quality assessment
+        quality_assessment:
+          enabled: true
+          metrics:
+            - statistical_similarity
+            - correlation_preservation
+            - distribution_distance
+            - privacy_leakage
+            - utility_score
+          threshold: 0.8
+          
+        # Validation
+        validation:
+          holdout_split: 0.2
+          cross_validation: 5
+          statistical_tests:
+            - kolmogorov_smirnov
+            - chi_square
+            - correlation_test
+```
+
+### Privacy Metrics
+
+```yaml
+stages:
+  - type: augmentation
+    name: private-synthetic-data
+    config:
+      service: synthetic_generation
+      method: dp_gan
+      parameters:
+        # ... generation parameters ...
+        
+        # Privacy assessment
+        privacy_assessment:
+          enabled: true
+          metrics:
+            - membership_inference
+            - attribute_inference
+            - k_anonymity_violation
+            - l_diversity_violation
+          privacy_budget_tracking: true
+          privacy_alerts: true
+```
+
+## Output Schema
+
+### Basic Output
+```json
+{
+  "synthetic_records": [
+    {
+      "age": 35,
+      "income": 75000,
+      "gender": "female",
+      "city": "New York"
+    }
+  ],
+  "metadata": {
+    "generation_method": "gmm",
+    "total_records": 1000,
+    "quality_score": 0.87,
+    "privacy_score": 0.92
+  }
+}
+```
+
+### Detailed Output
+```json
+{
+  "synthetic_records": [...],
+  "quality_metrics": {
+    "statistical_similarity": 0.89,
+    "correlation_preservation": 0.85,
+    "distribution_distance": 0.12,
+    "utility_score": 0.91
+  },
+  "privacy_metrics": {
+    "differential_privacy_epsilon": 1.0,
+    "membership_inference_risk": 0.05,
+    "attribute_inference_risk": 0.08,
+    "k_anonymity": 5
+  },
+  "field_statistics": {
+    "age": {
+      "mean": 42.3,
+      "std": 15.2,
+      "min": 18,
+      "max": 85
+    }
+  }
+}
+```
+
+## Best Practices
+
+1. **Privacy First**: Always prioritize privacy protection, especially with sensitive data
+2. **Validate Quality**: Assess statistical similarity and utility before use
+3. **Understand Limitations**: Know the capabilities and limitations of each method
+4. **Test Thoroughly**: Validate synthetic data with domain experts
+5. **Monitor Privacy**: Track privacy metrics and budget usage
+6. **Document Process**: Document generation methods and parameters
+7. **Use Appropriate Methods**: Choose methods based on data type and requirements
+8. **Preserve Relationships**: Maintain correlations and dependencies between fields
+9. **Handle Constraints**: Respect business rules and data constraints
+10. **Regular Updates**: Retrain models as data patterns evolve
+
+## Troubleshooting
+
+### Common Issues
+
+#### Poor Quality Synthetic Data
+- Increase model complexity
+- Add more training data
+- Try different generation methods
+- Adjust hyperparameters
+
+#### Privacy Leakage
+- Reduce epsilon value
+- Add more noise
+- Use stronger anonymization
+- Validate privacy metrics
+
+#### Performance Issues
+- Reduce batch size
+- Use parallel processing
+- Limit field dimensions
+- Choose simpler methods
+
+#### Unrealistic Correlations
+- Enable correlation preservation
+- Use conditional generation
+- Add business rules
+- Validate with domain experts
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create pipeline with synthetic data generation
+pipeline = client.pipelines.create(
+    name="synthetic-data-pipeline",
+    config={
+        "datasets": {
+            "input": "original-data",
+            "output": "synthetic-data"
+        },
+        "stages": [
+            {
+                "type": "augmentation",
+                "name": "generate-synthetic-data",
+                "config": {
+                    "service": "synthetic_generation",
+                    "method": "vae",
+                    "parameters": {
+                        "architecture": {
+                            "encoder": [64, 32, 16],
+                            "latent_dim": 8,
+                            "decoder": [16, 32, 64]
+                        },
+                        "epochs": 100,
+                        "fields": ["age", "income", "gender"],
+                        "output_records": 1000,
+                        "preserve_privacy": True,
+                        "epsilon": 1.0
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create pipeline with synthetic data generation
+const pipeline = await client.pipelines.create({
+  name: 'synthetic-data-pipeline',
+  config: {
+    datasets: {
+      input: 'original-data',
+      output: 'synthetic-data'
+    },
+    stages: [
+      {
+        type: 'augmentation',
+        name: 'generate-synthetic-data',
+        config: {
+          service: 'synthetic_generation',
+          method: 'vae',
+          parameters: {
+            architecture: {
+              encoder: [64, 32, 16],
+              latent_dim: 8,
+              decoder: [16, 32, 64]
+            },
+            epochs: 100,
+            fields: ['age', 'income', 'gender'],
+            output_records: 1000,
+            preserve_privacy: true,
+            epsilon: 1.0
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+This comprehensive synthetic data generation service provides powerful tools for creating realistic, privacy-preserving synthetic data for various use cases, with multiple generation methods and extensive configuration options.

@@ -1,0 +1,609 @@
+---
+title: Outlier Detection
+description: Detect anomalies and outliers in your datasets using built-in ML services
+---
+
+# Outlier Detection
+
+Xether AI provides built-in outlier detection capabilities to identify anomalies, unusual patterns, and data quality issues in your datasets. This service uses multiple machine learning algorithms to detect various types of outliers automatically.
+
+## Overview
+
+Outlier detection helps you:
+- Identify data quality issues early
+- Detect fraud or unusual behavior
+- Monitor data drift and changes
+- Improve model training data quality
+- Ensure data consistency and reliability
+
+## Supported Algorithms
+
+### Statistical Methods
+
+#### Z-Score Detection
+Identifies outliers based on standard deviations from the mean.
+
+**Best for:**
+- Normally distributed data
+- Single-dimensional analysis
+- Quick anomaly detection
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: zscore
+      parameters:
+        threshold: 3.0  # Standard deviations
+        fields: ["amount", "transaction_count"]
+        output_field: "outlier_zscore"
+        include_scores: true
+```
+
+#### IQR (Interquartile Range)
+Uses quartile ranges to identify outliers.
+
+**Best for:**
+- Non-normal distributions
+- Robust to extreme values
+- Financial and transactional data
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: iqr
+      parameters:
+        multiplier: 1.5  # IQR multiplier
+        fields: ["price", "quantity"]
+        output_field: "outlier_iqr"
+        include_bounds: true
+```
+
+### Machine Learning Methods
+
+#### Isolation Forest
+Tree-based algorithm that isolates outliers efficiently.
+
+**Best for:**
+- High-dimensional data
+- Large datasets
+- Complex patterns
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: isolation_forest
+      parameters:
+        contamination: 0.1  # Expected outlier proportion
+        n_estimators: 100
+        max_samples: auto
+        random_state: 42
+        fields: ["feature1", "feature2", "feature3"]
+        output_field: "outlier_isolation"
+        include_scores: true
+```
+
+#### Local Outlier Factor (LOF)
+Measures local density deviation to detect outliers.
+
+**Best for:**
+- Varying density datasets
+- Spatial data
+- Clustering-based anomalies
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: lof
+      parameters:
+        n_neighbors: 20
+        contamination: 0.1
+        novelty: false
+        fields: ["latitude", "longitude", "value"]
+        output_field: "outlier_lof"
+        include_scores: true
+```
+
+#### One-Class SVM
+Support vector machine for novelty detection.
+
+**Best for:**
+- High-dimensional data
+- Novelty detection
+- Text and categorical features
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: one_class_svm
+      parameters:
+        kernel: rbf
+        gamma: scale
+        nu: 0.1
+        fields: ["feature1", "feature2", "feature3"]
+        output_field: "outlier_svm"
+        include_scores: true
+```
+
+### Deep Learning Methods
+
+#### Autoencoder
+Neural network that learns to reconstruct normal data.
+
+**Best for:**
+- Complex patterns
+- High-dimensional data
+- Sequential data
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: autoencoder
+      parameters:
+        architecture:
+          - 64
+          - 32
+          - 16
+          - 32
+          - 64
+        activation: relu
+        optimizer: adam
+        epochs: 100
+        batch_size: 32
+        threshold_percentile: 95
+        fields: ["feature1", "feature2", "feature3"]
+        output_field: "outlier_autoencoder"
+        include_reconstruction_error: true
+```
+
+## Configuration Options
+
+### Basic Configuration
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: isolation_forest  # Required
+      parameters:
+        # Algorithm-specific parameters
+        contamination: 0.1
+        
+        # Field selection
+        fields: ["field1", "field2"]  # Required
+        exclude_fields: ["id", "timestamp"]
+        
+        # Output configuration
+        output_field: "is_outlier"  # Required
+        include_scores: true
+        include_reason: true
+        
+        # Performance
+        batch_size: 1000
+        parallel_processing: true
+```
+
+### Advanced Configuration
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: isolation_forest
+      parameters:
+        # Algorithm parameters
+        contamination: 0.05
+        n_estimators: 200
+        max_features: auto
+        max_samples: 0.8
+        random_state: 42
+        
+        # Feature engineering
+        fields: ["amount", "frequency", "duration"]
+        feature_scaling: standard  # Options: standard, minmax, robust, none
+        feature_selection: variance  # Options: variance, correlation, mutual_info
+        
+        # Output options
+        output_field: "outlier_result"
+        include_scores: true
+        include_reason: true
+        include_threshold: true
+        score_field: "outlier_score"
+        reason_field: "outlier_reason"
+        
+        # Threshold configuration
+        threshold_method: auto  # Options: auto, percentile, fixed
+        threshold_percentile: 95
+        threshold_fixed: 0.5
+        
+        # Multi-algorithm ensemble
+        ensemble:
+          enabled: true
+          algorithms: ["isolation_forest", "lof", "one_class_svm"]
+          voting_method: majority  # Options: majority, weighted, average
+          weights: [0.4, 0.3, 0.3]
+          
+        # Performance tuning
+        batch_size: 5000
+        parallel_processing: true
+        max_workers: 4
+        memory_limit_mb: 2048
+        
+        # Monitoring
+        compute_statistics: true
+        output_distribution: true
+        save_model: true
+        model_path: "s3://models/outlier-detection/"
+```
+
+## Output Schema
+
+The outlier detection stage adds the following fields to your data:
+
+### Basic Output
+```json
+{
+  "original_field1": "value1",
+  "original_field2": "value2",
+  "is_outlier": true,
+  "outlier_score": 0.85
+}
+```
+
+### Detailed Output
+```json
+{
+  "original_field1": "value1",
+  "original_field2": "value2",
+  "is_outlier": true,
+  "outlier_score": 0.85,
+  "outlier_reason": "High deviation from normal patterns",
+  "outlier_threshold": 0.7,
+  "algorithm_used": "isolation_forest",
+  "feature_contributions": {
+    "amount": 0.6,
+    "frequency": 0.25
+  }
+}
+```
+
+### Ensemble Output
+```json
+{
+  "original_field1": "value1",
+  "original_field2": "value2",
+  "is_outlier": true,
+  "outlier_score": 0.78,
+  "outlier_reason": "Consensus across multiple algorithms",
+  "algorithm_votes": {
+    "isolation_forest": true,
+    "lof": false,
+    "one_class_svm": true
+  },
+  "ensemble_confidence": 0.67
+}
+```
+
+## Use Cases
+
+### Financial Fraud Detection
+
+```yaml
+stages:
+  - type: augmentation
+    name: fraud-detection
+    config:
+      service: outlier_detection
+      algorithm: isolation_forest
+      parameters:
+        contamination: 0.01  # Low expected fraud rate
+        fields: 
+          - "transaction_amount"
+          - "transaction_frequency"
+          - "merchant_category"
+          - "location_distance"
+        output_field: "is_fraud_suspect"
+        include_scores: true
+        threshold_percentile: 99
+```
+
+### Data Quality Monitoring
+
+```yaml
+stages:
+  - type: augmentation
+    name: data-quality-check
+    config:
+      service: outlier_detection
+      algorithm: zscore
+      parameters:
+        threshold: 3.0
+        fields: 
+          - "age"
+          - "income"
+          - "credit_score"
+        output_field: "data_quality_issue"
+        include_reason: true
+        exclude_fields: ["id", "timestamp"]
+```
+
+### IoT Anomaly Detection
+
+```yaml
+stages:
+  - type: augmentation
+    name: iot-anomaly-detection
+    config:
+      service: outlier_detection
+      algorithm: lof
+      parameters:
+        n_neighbors: 50
+        contamination: 0.05
+        fields:
+          - "temperature"
+          - "pressure"
+          - "vibration"
+          - "power_consumption"
+        output_field: "equipment_anomaly"
+        include_scores: true
+        batch_size: 100
+```
+
+### Network Security
+
+```yaml
+stages:
+  - type: augmentation
+    name: security-anomaly
+    config:
+      service: outlier_detection
+      algorithm: autoencoder
+      parameters:
+        architecture: [128, 64, 32, 16, 32, 64, 128]
+        epochs: 200
+        threshold_percentile: 99
+        fields:
+          - "packet_size"
+          - "connection_duration"
+          - "bytes_transferred"
+          - "protocol_type"
+        output_field: "security_threat"
+        include_reconstruction_error: true
+```
+
+## Performance Considerations
+
+### Algorithm Selection Guide
+
+| Dataset Size | Dimensions | Recommended Algorithm | Reason |
+|--------------|------------|----------------------|---------|
+| < 10K rows | < 10 | Z-Score, IQR | Fast, simple |
+| 10K-1M rows | 10-50 | Isolation Forest | Efficient, accurate |
+| 1M-10M rows | 50-100 | Isolation Forest, LOF | Scalable |
+| > 10M rows | > 100 | Autoencoder, Ensemble | Complex patterns |
+
+### Optimization Tips
+
+```yaml
+# For large datasets
+parameters:
+  batch_size: 10000
+  parallel_processing: true
+  max_workers: 8
+  memory_limit_mb: 8192
+
+# For high-dimensional data
+parameters:
+  feature_selection: mutual_info
+  feature_scaling: robust
+  dimensionality_reduction: pca
+  n_components: 50
+
+# For real-time processing
+parameters:
+  algorithm: isolation_forest
+  n_estimators: 50  # Fewer trees for speed
+  max_samples: 0.1  # Sample for training
+```
+
+## Monitoring and Evaluation
+
+### Model Performance Metrics
+
+```yaml
+stages:
+  - type: augmentation
+    name: outlier-detection
+    config:
+      service: outlier_detection
+      algorithm: isolation_forest
+      parameters:
+        # ... algorithm parameters ...
+        
+        # Evaluation
+        evaluation:
+          enabled: true
+          test_split: 0.2
+          metrics:
+            - precision
+            - recall
+            - f1_score
+            - roc_auc
+          cross_validation: 5
+          
+        # Monitoring
+        monitoring:
+          track_drift: true
+          alert_threshold: 0.8
+          save_predictions: true
+          log_feature_importance: true
+```
+
+### Output Statistics
+
+The service provides detailed statistics about outlier detection:
+
+```json
+{
+  "summary": {
+    "total_records": 100000,
+    "outliers_detected": 1250,
+    "outlier_percentage": 1.25,
+    "average_outlier_score": 0.73,
+    "algorithm_used": "isolation_forest"
+  },
+  "distribution": {
+    "min_score": 0.0,
+    "max_score": 0.95,
+    "mean_score": 0.12,
+    "std_score": 0.18,
+    "percentiles": {
+      "50": 0.08,
+      "75": 0.15,
+      "90": 0.25,
+      "95": 0.35,
+      "99": 0.65
+    }
+  },
+  "feature_importance": {
+    "transaction_amount": 0.45,
+    "transaction_frequency": 0.32,
+    "merchant_category": 0.15,
+    "location_distance": 0.08
+  }
+}
+```
+
+## Best Practices
+
+1. **Start Simple**: Begin with statistical methods before moving to complex algorithms
+2. **Understand Your Data**: Know the expected outlier rate and patterns
+3. **Validate Results**: Manually review detected outliers to validate accuracy
+4. **Monitor Performance**: Track model performance over time and retrain as needed
+5. **Feature Engineering**: Select relevant features and handle missing values
+6. **Threshold Tuning**: Adjust thresholds based on business requirements
+7. **Ensemble Methods**: Combine multiple algorithms for better accuracy
+8. **Documentation**: Document outlier detection logic and business rules
+9. **Privacy**: Ensure outlier detection complies with privacy regulations
+10. **Explainability**: Use interpretable algorithms when explanations are required
+
+## Troubleshooting
+
+### Common Issues
+
+#### Too Many False Positives
+- Reduce contamination parameter
+- Increase threshold
+- Use ensemble methods
+- Add more relevant features
+
+#### Too Few Outliers Detected
+- Increase contamination parameter
+- Lower threshold
+- Try different algorithms
+- Check feature scaling
+
+#### Performance Issues
+- Reduce batch size
+- Use parallel processing
+- Limit feature dimensions
+- Choose faster algorithms
+
+#### Memory Issues
+- Use streaming processing
+- Reduce batch size
+- Implement feature selection
+- Use dimensionality reduction
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create pipeline with outlier detection
+pipeline = client.pipelines.create(
+    name="outlier-detection-pipeline",
+    config={
+        "datasets": {
+            "input": "transactions",
+            "output": "transactions-with-outliers"
+        },
+        "stages": [
+            {
+                "type": "augmentation",
+                "name": "detect-outliers",
+                "config": {
+                    "service": "outlier_detection",
+                    "algorithm": "isolation_forest",
+                    "parameters": {
+                        "contamination": 0.05,
+                        "fields": ["amount", "frequency", "duration"],
+                        "output_field": "is_outlier",
+                        "include_scores": True
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create pipeline with outlier detection
+const pipeline = await client.pipelines.create({
+  name: 'outlier-detection-pipeline',
+  config: {
+    datasets: {
+      input: 'transactions',
+      output: 'transactions-with-outliers'
+    },
+    stages: [
+      {
+        type: 'augmentation',
+        name: 'detect-outliers',
+        config: {
+          service: 'outlier_detection',
+          algorithm: 'isolation_forest',
+          parameters: {
+            contamination: 0.05,
+            fields: ['amount', 'frequency', 'duration'],
+            output_field: 'is_outlier',
+            include_scores: true
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+This comprehensive outlier detection service provides powerful tools for identifying anomalies in your data, with multiple algorithms and extensive configuration options to suit various use cases.
