@@ -1,0 +1,546 @@
+---
+title: Snowflake Integration
+description: Complete guide for integrating Xether AI with Snowflake
+---
+
+# Snowflake Integration
+
+This guide covers how to connect Xether AI to Snowflake for data ingestion, transformation, and output. Snowflake is a cloud data warehouse that provides excellent performance for analytical workloads.
+
+## Prerequisites
+
+- Snowflake account with appropriate permissions
+- Database and schema created
+- User with required privileges
+- Xether AI account with pipeline creation permissions
+
+## Authentication Setup
+
+### Option 1: Username and Password
+
+```yaml
+credentials:
+  user: ${SNOWFLAKE_USER}
+  password: ${SNOWFLAKE_PASSWORD}
+  account: your-account-name
+  warehouse: your-warehouse
+  database: your-database
+  schema: your-schema
+```
+
+### Option 2: Key Pair Authentication (Recommended)
+
+1. Generate RSA key pair:
+```bash
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out snowflake_private_key.p8 -nocrypt
+openssl rsa -in snowflake_private_key.p8 -pubout -out snowflake_public_key.pub
+```
+
+2. Assign public key to Snowflake user:
+```sql
+ALTER USER your_user SET RSA_PUBLIC_KEY='your-public-key';
+```
+
+3. Configure in pipeline:
+```yaml
+credentials:
+  user: ${SNOWFLAKE_USER}
+  private_key: ${SNOWFLAKE_PRIVATE_KEY}
+  private_key_passphrase: ${SNOWFLAKE_PRIVATE_KEY_PASSPHRASE}  # Optional
+  account: your-account-name
+  warehouse: your-warehouse
+  database: your-database
+  schema: your-schema
+```
+
+### Option 3: OAuth Integration
+
+```yaml
+credentials:
+  oauth_token: ${SNOWFLAKE_OAUTH_TOKEN}
+  account: your-account-name
+  warehouse: your-warehouse
+  database: your-database
+  schema: your-schema
+```
+
+## Required Permissions
+
+The Snowflake user needs these minimum privileges:
+
+```sql
+-- Usage permissions
+GRANT USAGE ON WAREHOUSE your_warehouse TO ROLE your_role;
+GRANT USAGE ON DATABASE your_database TO ROLE your_role;
+GRANT USAGE ON SCHEMA your_schema TO ROLE your_role;
+
+-- Read permissions
+GRANT SELECT ON ALL TABLES IN SCHEMA your_schema TO ROLE your_role;
+
+-- Write permissions (if outputting to Snowflake)
+GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA your_schema TO ROLE your_role;
+GRANT CREATE TABLE ON SCHEMA your_schema TO ROLE your_role;
+```
+
+## Pipeline Configuration
+
+### Basic Snowflake Ingestion
+
+```yaml
+name: snowflake-data-ingestion
+description: Ingest data from Snowflake table
+datasets:
+  input: snowflake-raw-data
+  output: processed-data
+stages:
+  - type: ingestion
+    name: load-from-snowflake
+    config:
+      source: snowflake
+      credentials:
+        user: ${SNOWFLAKE_USER}
+        password: ${SNOWFLAKE_PASSWORD}
+        account: your-account-name
+        warehouse: your-warehouse
+        database: your-database
+        schema: your-schema
+      query: |
+        SELECT 
+          customer_id,
+          email,
+          created_at,
+          updated_at
+        FROM customers
+        WHERE created_at >= '2024-01-01'
+      options:
+        batch_size: 10000
+        max_rows: 1000000
+        timeout_seconds: 3600
+```
+
+### Advanced Snowflake Configuration
+
+```yaml
+stages:
+  - type: ingestion
+    name: advanced-snowflake-load
+    config:
+      source: snowflake
+      credentials:
+        user: ${SNOWFLAKE_USER}
+        private_key: ${SNOWFLAKE_PRIVATE_KEY}
+        account: your-account-name
+        warehouse: compute-wh
+        database: analytics_db
+        schema: raw_data
+      query: |
+        WITH customer_orders AS (
+          SELECT 
+            c.customer_id,
+            c.email,
+            c.created_at as customer_created,
+            o.order_id,
+            o.order_date,
+            o.amount,
+            o.status
+          FROM customers c
+          LEFT JOIN orders o ON c.customer_id = o.customer_id
+          WHERE c.created_at >= DATEADD(month, -3, CURRENT_DATE())
+        )
+        SELECT * FROM customer_orders
+      options:
+        batch_size: 50000
+        max_rows: 5000000
+        timeout_seconds: 7200
+        parallel_reads: true
+        max_parallel_readers: 4
+        use_caching: true
+        cache_ttl_seconds: 1800
+```
+
+### Snowflake Output Configuration
+
+```yaml
+stages:
+  - type: output
+    name: write-to-snowflake
+    config:
+      destination: snowflake
+      credentials:
+        user: ${SNOWFLAKE_USER}
+        private_key: ${SNOWFLAKE_PRIVATE_KEY}
+        account: your-account-name
+        warehouse: your-warehouse
+        database: your-database
+        schema: processed_data
+      table: processed_customers
+      mode: append  # Options: append, overwrite, merge
+      options:
+        create_table_if_not_exists: true
+        auto_detect_schema: true
+        batch_size: 10000
+        parallel_writes: true
+        max_parallel_writers: 2
+        use_temporary_stage: true
+```
+
+## Query Optimization
+
+### Query Best Practices
+
+1. **Use WHERE clauses** to limit data volume
+2. **Select specific columns** instead of SELECT *
+3. **Use appropriate data types** for filters
+4. **Leverage Snowflake's clustering** keys
+5. **Use CTEs** for complex queries
+
+### Optimized Query Example
+```yaml
+config:
+  query: |
+    SELECT 
+      customer_id,
+      email,
+      created_at,
+      CASE 
+        WHEN last_order_date >= DATEADD(day, -30, CURRENT_DATE()) 
+        THEN 'active'
+        ELSE 'inactive'
+      END as customer_status
+    FROM customers
+    WHERE created_at >= DATEADD(year, -1, CURRENT_DATE())
+      AND email IS NOT NULL
+    ORDER BY created_at DESC
+    LIMIT 1000000
+```
+
+### Partition Pruning
+```yaml
+config:
+  query: |
+    SELECT * FROM events
+    WHERE event_date BETWEEN '2024-01-01' AND '2024-01-31'
+      AND event_type IN ('purchase', 'refund')
+```
+
+## Performance Tuning
+
+### Warehouse Configuration
+```yaml
+config:
+  credentials:
+    warehouse: your-warehouse
+    # Configure warehouse size for optimal performance
+    # X-Small: 1 credit/hour
+    # Small: 2 credits/hour  
+    # Medium: 4 credits/hour
+    # Large: 8 credits/hour
+    # X-Large: 16 credits/hour
+    # 2X-Large: 32 credits/hour
+    # 3X-Large: 64 credits/hour
+    # 4X-Large: 128 credits/hour
+```
+
+### Batch Processing
+```yaml
+config:
+  options:
+    batch_size: 50000  # Optimize based on data volume
+    max_rows: 5000000  # Limit total rows processed
+    parallel_reads: true
+    max_parallel_readers: 4
+    use_result_cache: true
+```
+
+### Connection Pooling
+```yaml
+config:
+  options:
+    connection_pool_size: 5
+    connection_timeout_seconds: 300
+    idle_timeout_seconds: 600
+    max_retries: 3
+    retry_delay_seconds: 30
+```
+
+## Data Type Mapping
+
+| Snowflake Type | Xether AI Type | Notes |
+|----------------|----------------|-------|
+| NUMBER | decimal | Precision and scale preserved |
+| INTEGER | integer | 32-bit integer |
+| BIGINT | long | 64-bit integer |
+| FLOAT | double | Double precision |
+| BOOLEAN | boolean | True/False values |
+| VARCHAR | string | Variable length string |
+| DATE | date | Date without time |
+| TIMESTAMP | timestamp | Timestamp with timezone |
+| TIMESTAMP_NTZ | timestamp | Timestamp without timezone |
+| VARIANT | object | JSON-like structure |
+| ARRAY | array | Array of values |
+| OBJECT | object | Key-value pairs |
+
+## Schema Evolution
+
+### Auto Schema Detection
+```yaml
+config:
+  options:
+    auto_detect_schema: true
+    schema_evolution: true
+    handle_new_columns: add  # Options: add, ignore, error
+    handle_missing_columns: null  # Options: null, error, default
+```
+
+### Manual Schema Definition
+```yaml
+config:
+  schema:
+    type: struct
+    fields:
+      - name: customer_id
+        type: string
+        nullable: false
+      - name: email
+        type: string
+        nullable: false
+      - name: created_at
+        type: timestamp
+        nullable: false
+      - name: order_count
+        type: integer
+        nullable: true
+```
+
+## Error Handling
+
+### Retry Configuration
+```yaml
+config:
+  retry:
+    max_attempts: 3
+    backoff_seconds: 30
+    exponential_backoff: true
+    retry_on_errors:
+      - "connection timeout"
+      - "query timeout"
+      - "warehouse unavailable"
+  error_handling:
+    continue_on_query_error: false
+    log_query_errors: true
+    validate_sql: true
+```
+
+### Query Validation
+```yaml
+config:
+  validation:
+    validate_sql_syntax: true
+    validate_table_access: true
+    validate_permissions: true
+    dry_run: true  # Test query without executing
+```
+
+## Monitoring and Logging
+
+### Query Performance Monitoring
+```yaml
+config:
+  monitoring:
+    log_query_plans: true
+    log_query_statistics: true
+    track_execution_time: true
+    track_rows_processed: true
+    track_bytes_scanned: true
+```
+
+### Custom Metrics
+```yaml
+config:
+  metrics:
+    track_warehouse_usage: true
+    track_credits_consumed: true
+    custom_tags:
+      environment: production
+      data_source: snowflake
+      warehouse: compute-wh
+```
+
+## Security Best Practices
+
+### Network Policies
+```yaml
+config:
+  credentials:
+    # Use network policies for additional security
+    # Configure in Snowflake:
+    # CREATE NETWORK POLICY xether_ai_policy
+    # ALLOWED_IP_LIST = ('203.0.113.0/24')
+    # BLOCKED_IP_LIST = ('0.0.0.0/0')
+```
+
+### Role-Based Access Control
+```sql
+-- Create specific role for Xether AI
+CREATE ROLE XETHER_AI_ROLE;
+
+-- Grant minimal required permissions
+GRANT USAGE ON WAREHOUSE XETHER_AI_WH TO ROLE XETHER_AI_ROLE;
+GRANT USAGE ON DATABASE ANALYTICS_DB TO ROLE XETHER_AI_ROLE;
+GRANT USAGE ON SCHEMA RAW_DATA TO ROLE XETHER_AI_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA RAW_DATA TO ROLE XETHER_AI_ROLE;
+
+-- Grant role to user
+GRANT ROLE XETHER_AI_ROLE TO USER XETHER_AI_USER;
+```
+
+### Data Encryption
+Snowflake automatically encrypts data at rest and in transit. Ensure your connection uses HTTPS:
+
+```yaml
+config:
+  credentials:
+    # HTTPS is enforced by default
+    # No additional configuration needed
+    account: your-account-name.snowflakecomputing.com
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Timeout
+- Check warehouse availability
+- Verify network connectivity
+- Increase timeout values
+- Use appropriate warehouse size
+
+#### Query Timeout
+- Optimize query performance
+- Increase query timeout
+- Use result caching
+- Break large queries into smaller chunks
+
+#### Permission Denied
+- Verify user permissions
+- Check role assignments
+- Ensure warehouse access
+- Validate database/schema access
+
+#### Warehouse Suspended
+- Resume warehouse manually or via API
+- Set auto-resume configuration
+- Monitor warehouse status
+
+### Debug Configuration
+```yaml
+config:
+  debug:
+    log_sql_statements: true
+    log_connection_details: true
+    log_performance_metrics: true
+    verbose_errors: true
+```
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create Snowflake integration pipeline
+pipeline = client.pipelines.create(
+    name="snowflake-integration",
+    config={
+        "datasets": {
+            "input": "snowflake-raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-from-snowflake",
+                "config": {
+                    "source": "snowflake",
+                    "credentials": {
+                        "user": os.getenv("SNOWFLAKE_USER"),
+                        "private_key": os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+                        "account": "your-account",
+                        "warehouse": "compute-wh",
+                        "database": "analytics_db",
+                        "schema": "raw_data"
+                    },
+                    "query": """
+                        SELECT customer_id, email, created_at
+                        FROM customers
+                        WHERE created_at >= DATEADD(month, -1, CURRENT_DATE())
+                    """,
+                    "options": {
+                        "batch_size": 50000,
+                        "parallel_reads": True
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create Snowflake integration pipeline
+const pipeline = await client.pipelines.create({
+  name: 'snowflake-integration',
+  config: {
+    datasets: {
+      input: 'snowflake-raw-data',
+      output: 'processed-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-from-snowflake',
+        config: {
+          source: 'snowflake',
+          credentials: {
+            user: process.env.SNOWFLAKE_USER,
+            private_key: process.env.SNOWFLAKE_PRIVATE_KEY,
+            account: 'your-account',
+            warehouse: 'compute-wh',
+            database: 'analytics_db',
+            schema: 'raw_data'
+          },
+          query: `
+            SELECT customer_id, email, created_at
+            FROM customers
+            WHERE created_at >= DATEADD(month, -1, CURRENT_DATE())
+          `,
+          options: {
+            batch_size: 50000,
+            parallel_reads: true
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+## Best Practices
+
+1. **Use key pair authentication** instead of passwords
+2. **Optimize query performance** with proper filtering and indexing
+3. **Monitor warehouse usage** to control costs
+4. **Use appropriate warehouse sizes** for your workload
+5. **Implement proper error handling** and retry logic
+6. **Use result caching** for repeated queries
+7. **Set up monitoring** for query performance and costs
+8. **Use network policies** for enhanced security
+9. **Test queries** with small datasets first
+10. **Document data lineage** and transformations

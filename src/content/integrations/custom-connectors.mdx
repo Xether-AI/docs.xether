@@ -1,0 +1,776 @@
+---
+title: Custom Connectors
+description: Guide for developing custom connectors for Xether AI
+---
+
+# Custom Connectors
+
+This guide covers how to develop custom connectors for Xether AI, enabling integration with data sources not natively supported. Custom connectors allow you to connect to any system with an API or accessible data format.
+
+## Overview
+
+Custom connectors in Xether AI are implemented as modular components that handle:
+- Data source connectivity
+- Authentication and authorization
+- Data ingestion and output
+- Schema discovery and mapping
+- Error handling and retry logic
+
+## Connector Architecture
+
+### Core Components
+
+A custom connector consists of these main components:
+
+1. **Connector Class**: Main implementation class
+2. **Configuration Schema**: Defines connector configuration
+3. **Authentication Handler**: Manages authentication flows
+4. **Data Reader**: Handles data ingestion
+5. **Data Writer**: Handles data output (optional)
+6. **Schema Provider**: Discovers and provides schema information
+
+### Project Structure
+
+```
+my-connector/
+├── src/
+│   ├── connector/
+│   │   ├── MyConnector.ts          # Main connector class
+│   │   ├── config/
+│   │   │   └── schema.ts           # Configuration schema
+│   │   ├── auth/
+│   │   │   └── auth-handler.ts     # Authentication logic
+│   │   ├── reader/
+│   │   │   └── data-reader.ts      # Data ingestion
+│   │   └── writer/
+│   │       └── data-writer.ts      # Data output
+│   ├── types/
+│   │   └── index.ts                # TypeScript types
+│   └── index.ts                    # Export entry point
+├── tests/
+│   ├── connector.test.ts
+│   └── integration.test.ts
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ or Python 3.9+
+- Xether AI SDK
+- Understanding of the target data source API
+- Development environment setup
+
+### Installation
+
+#### TypeScript/JavaScript
+```bash
+npm install @xether-ai/connector-sdk
+```
+
+#### Python
+```bash
+pip install xether-ai-connector-sdk
+```
+
+## Basic Connector Implementation
+
+### TypeScript Example
+
+```typescript
+import { 
+  Connector, 
+  ConnectorConfig, 
+  DataReader, 
+  DataWriter,
+  AuthHandler,
+  SchemaProvider 
+} from '@xether-ai/connector-sdk';
+
+export interface MyConnectorConfig extends ConnectorConfig {
+  apiUrl: string;
+  apiKey: string;
+  timeout?: number;
+  maxRetries?: number;
+}
+
+export class MyConnector extends Connector<MyConnectorConfig> {
+  private authHandler: MyAuthHandler;
+  private dataReader: MyDataReader;
+  private dataWriter?: MyDataWriter;
+  private schemaProvider: MySchemaProvider;
+
+  constructor(config: MyConnectorConfig) {
+    super(config);
+    this.authHandler = new MyAuthHandler(config);
+    this.dataReader = new MyDataReader(config, this.authHandler);
+    this.dataWriter = new MyDataWriter(config, this.authHandler);
+    this.schemaProvider = new MySchemaProvider(config, this.authHandler);
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      await this.authHandler.authenticate();
+      return true;
+    } catch (error) {
+      throw new Error(`Connection test failed: ${error.message}`);
+    }
+  }
+
+  getReader(): DataReader {
+    return this.dataReader;
+  }
+
+  getWriter(): DataWriter {
+    return this.dataWriter;
+  }
+
+  getSchemaProvider(): SchemaProvider {
+    return this.schemaProvider;
+  }
+}
+```
+
+### Python Example
+
+```python
+from xether_ai_connector_sdk import (
+    Connector, 
+    ConnectorConfig, 
+    DataReader, 
+    DataWriter,
+    AuthHandler,
+    SchemaProvider
+)
+from typing import Dict, Any, Optional
+
+class MyConnectorConfig(ConnectorConfig):
+    api_url: str
+    api_key: str
+    timeout: Optional[int] = 30
+    max_retries: Optional[int] = 3
+
+class MyConnector(Connector[MyConnectorConfig]):
+    def __init__(self, config: MyConnectorConfig):
+        super().__init__(config)
+        self.auth_handler = MyAuthHandler(config)
+        self.data_reader = MyDataReader(config, self.auth_handler)
+        self.data_writer = MyDataWriter(config, self.auth_handler)
+        self.schema_provider = MySchemaProvider(config, self.auth_handler)
+
+    async def test_connection(self) -> bool:
+        try:
+            await self.auth_handler.authenticate()
+            return True
+        except Exception as error:
+            raise Exception(f"Connection test failed: {str(error)}")
+
+    def get_reader(self) -> DataReader:
+        return self.data_reader
+
+    def get_writer(self) -> DataWriter:
+        return self.data_writer
+
+    def get_schema_provider(self) -> SchemaProvider:
+        return self.schema_provider
+```
+
+## Authentication Handler
+
+### API Key Authentication
+
+```typescript
+export class MyAuthHandler implements AuthHandler {
+  private accessToken: string | null = null;
+  private tokenExpiry: Date | null = null;
+
+  constructor(private config: MyConnectorConfig) {}
+
+  async authenticate(): Promise<void> {
+    const response = await fetch(`${this.config.apiUrl}/auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': this.config.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Authentication failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    this.accessToken = data.access_token;
+    this.tokenExpiry = new Date(data.expires_at);
+  }
+
+  getAuthHeaders(): Record<string, string> {
+    if (!this.accessToken) {
+      throw new Error('Not authenticated');
+    }
+
+    if (this.tokenExpiry && new Date() > this.tokenExpiry) {
+      throw new Error('Token expired');
+    }
+
+    return {
+      'Authorization': `Bearer ${this.accessToken}`
+    };
+  }
+
+  async refreshToken(): Promise<void> {
+    await this.authenticate();
+  }
+}
+```
+
+### OAuth 2.0 Authentication
+
+```typescript
+export class OAuthAuthHandler implements AuthHandler {
+  private tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_at: Date;
+  } | null = null;
+
+  constructor(
+    private config: MyConnectorConfig,
+    private oauthConfig: {
+      clientId: string;
+      clientSecret: string;
+      tokenUrl: string;
+      scope: string;
+    }
+  ) {}
+
+  async authenticate(): Promise<void> {
+    const response = await fetch(this.oauthConfig.tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: this.oauthConfig.clientId,
+        client_secret: this.oauthConfig.clientSecret,
+        scope: this.oauthConfig.scope
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OAuth authentication failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    this.tokens = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: new Date(Date.now() + data.expires_in * 1000)
+    };
+  }
+
+  getAuthHeaders(): Record<string, string> {
+    if (!this.tokens) {
+      throw new Error('Not authenticated');
+    }
+
+    if (new Date() > this.tokens.expires_at) {
+      throw new Error('Token expired');
+    }
+
+    return {
+      'Authorization': `Bearer ${this.tokens.access_token}`
+    };
+  }
+}
+```
+
+## Data Reader Implementation
+
+### REST API Reader
+
+```typescript
+export class MyDataReader implements DataReader {
+  constructor(
+    private config: MyConnectorConfig,
+    private authHandler: AuthHandler
+  ) {}
+
+  async readData(query: string, options?: {
+    limit?: number;
+    offset?: number;
+    batchSize?: number;
+  }): Promise<AsyncIterable<Record<string, any>>> {
+    const batchSize = options?.batchSize || 1000;
+    let offset = options?.offset || 0;
+    let hasMore = true;
+
+    return (async function* (self) {
+      while (hasMore) {
+        const data = await self.fetchBatch(query, offset, batchSize);
+        
+        if (data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const record of data) {
+          yield record;
+        }
+
+        offset += batchSize;
+        
+        if (options?.limit && offset >= options.limit) {
+          break;
+        }
+      }
+    })(this);
+  }
+
+  private async fetchBatch(query: string, offset: number, limit: number): Promise<any[]> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.authHandler.getAuthHeaders()
+    };
+
+    const response = await fetch(`${this.config.apiUrl}/data`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        query,
+        offset,
+        limit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Data fetch failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  }
+
+  async getRowCount(query: string): Promise<number> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.authHandler.getAuthHeaders()
+    };
+
+    const response = await fetch(`${this.config.apiUrl}/count`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Count query failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.count || 0;
+  }
+}
+```
+
+### Database Reader
+
+```typescript
+export class DatabaseReader implements DataReader {
+  private pool: any;
+
+  constructor(
+    private config: DatabaseConnectorConfig,
+    private authHandler: DatabaseAuthHandler
+  ) {
+    this.pool = this.createConnectionPool();
+  }
+
+  async readData(query: string, options?: {
+    limit?: number;
+    offset?: number;
+    batchSize?: number;
+  }): Promise<AsyncIterable<Record<string, any>>> {
+    const batchSize = options?.batchSize || 1000;
+    let offset = options?.offset || 0;
+    let hasMore = true;
+
+    return (async function* (self) {
+      while (hasMore) {
+        const batchQuery = self.buildBatchQuery(query, offset, batchSize);
+        const data = await self.executeQuery(batchQuery);
+        
+        if (data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const record of data) {
+          yield record;
+        }
+
+        offset += batchSize;
+        
+        if (options?.limit && offset >= options.limit) {
+          break;
+        }
+      }
+    })(this);
+  }
+
+  private buildBatchQuery(query: string, offset: number, limit: number): string {
+    return `${query} LIMIT ${limit} OFFSET ${offset}`;
+  }
+
+  private async executeQuery(query: string): Promise<any[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(query);
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  }
+}
+```
+
+## Data Writer Implementation
+
+```typescript
+export class MyDataWriter implements DataWriter {
+  constructor(
+    private config: MyConnectorConfig,
+    private authHandler: AuthHandler
+  ) {}
+
+  async writeData(
+    data: AsyncIterable<Record<string, any>>,
+    target: string,
+    options?: {
+      batchSize?: number;
+      mode?: 'append' | 'overwrite' | 'merge';
+    }
+  ): Promise<{ writtenCount: number; errors: string[] }> {
+    const batchSize = options?.batchSize || 1000;
+    const mode = options?.mode || 'append';
+    let writtenCount = 0;
+    const errors: string[] = [];
+
+    const batch: Record<string, any>[] = [];
+
+    for await (const record of data) {
+      batch.push(record);
+
+      if (batch.length >= batchSize) {
+        try {
+          const count = await this.writeBatch(batch, target, mode);
+          writtenCount += count;
+          batch.length = 0; // Clear batch
+        } catch (error) {
+          errors.push(`Batch write failed: ${error.message}`);
+        }
+      }
+    }
+
+    // Write remaining records
+    if (batch.length > 0) {
+      try {
+        const count = await this.writeBatch(batch, target, mode);
+        writtenCount += count;
+      } catch (error) {
+        errors.push(`Final batch write failed: ${error.message}`);
+      }
+    }
+
+    return { writtenCount, errors };
+  }
+
+  private async writeBatch(
+    batch: Record<string, any>[],
+    target: string,
+    mode: string
+  ): Promise<number> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.authHandler.getAuthHeaders()
+    };
+
+    const response = await fetch(`${this.config.apiUrl}/write`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        target,
+        data: batch,
+        mode
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Batch write failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.writtenCount || batch.length;
+  }
+}
+```
+
+## Schema Provider Implementation
+
+```typescript
+export class MySchemaProvider implements SchemaProvider {
+  constructor(
+    private config: MyConnectorConfig,
+    private authHandler: AuthHandler
+  ) {}
+
+  async getSchema(entity: string): Promise<DataSchema> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.authHandler.getAuthHeaders()
+    };
+
+    const response = await fetch(`${this.config.apiUrl}/schema/${entity}`, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      throw new Error(`Schema fetch failed: ${response.statusText}`);
+    }
+
+    const schemaData = await response.json();
+    return this.mapToDataSchema(schemaData);
+  }
+
+  async listEntities(): Promise<string[]> {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.authHandler.getAuthHeaders()
+    };
+
+    const response = await fetch(`${this.config.apiUrl}/entities`, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      throw new Error(`Entity list failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.entities || [];
+  }
+
+  private mapToDataSchema(schemaData: any): DataSchema {
+    return {
+      type: 'struct',
+      fields: schemaData.fields.map((field: any) => ({
+        name: field.name,
+        type: this.mapDataType(field.type),
+        nullable: field.nullable || false,
+        description: field.description
+      }))
+    };
+  }
+
+  private mapDataType(type: string): string {
+    const typeMap: Record<string, string> = {
+      'string': 'string',
+      'integer': 'integer',
+      'number': 'double',
+      'boolean': 'boolean',
+      'date': 'date',
+      'datetime': 'timestamp',
+      'array': 'array',
+      'object': 'object'
+    };
+
+    return typeMap[type.toLowerCase()] || 'string';
+  }
+}
+```
+
+## Configuration Schema
+
+```typescript
+import { z } from 'zod';
+
+export const MyConnectorConfigSchema = z.object({
+  apiUrl: z.string().url().describe('Base URL for the API'),
+  apiKey: z.string().min(1).describe('API key for authentication'),
+  timeout: z.number().min(1).max(300).optional().default(30).describe('Request timeout in seconds'),
+  maxRetries: z.number().min(0).max(10).optional().default(3).describe('Maximum retry attempts'),
+  batchSize: z.number().min(1).max(10000).optional().default(1000).describe('Default batch size'),
+  enableCompression: z.boolean().optional().default(false).describe('Enable request compression')
+});
+
+export type MyConnectorConfig = z.infer<typeof MyConnectorConfigSchema>;
+```
+
+## Testing
+
+### Unit Tests
+
+```typescript
+import { MyConnector } from '../src/connector/MyConnector';
+
+describe('MyConnector', () => {
+  let connector: MyConnector;
+  let config: MyConnectorConfig;
+
+  beforeEach(() => {
+    config = {
+      apiUrl: 'https://api.example.com',
+      apiKey: 'test-key',
+      timeout: 30,
+      maxRetries: 3
+    };
+    connector = new MyConnector(config);
+  });
+
+  describe('testConnection', () => {
+    it('should successfully connect with valid credentials', async () => {
+      const result = await connector.testConnection();
+      expect(result).toBe(true);
+    });
+
+    it('should fail with invalid credentials', async () => {
+      config.apiKey = 'invalid-key';
+      const connector = new MyConnector(config);
+      
+      await expect(connector.testConnection()).rejects.toThrow('Connection test failed');
+    });
+  });
+
+  describe('data reading', () => {
+    it('should read data correctly', async () => {
+      const reader = connector.getReader();
+      const dataStream = reader.readData('SELECT * FROM users');
+      
+      const records = [];
+      for await (const record of dataStream) {
+        records.push(record);
+      }
+      
+      expect(records).toBeDefined();
+      expect(Array.isArray(records)).toBe(true);
+    });
+  });
+});
+```
+
+### Integration Tests
+
+```typescript
+import { MyConnector } from '../src/connector/MyConnector';
+
+describe('MyConnector Integration', () => {
+  let connector: MyConnector;
+  let config: MyConnectorConfig;
+
+  beforeAll(() => {
+    config = {
+      apiUrl: process.env.TEST_API_URL || 'https://api.test.com',
+      apiKey: process.env.TEST_API_KEY || 'test-key'
+    };
+    connector = new MyConnector(config);
+  });
+
+  it('should connect to real API', async () => {
+    const result = await connector.testConnection();
+    expect(result).toBe(true);
+  });
+
+  it('should read real data', async () => {
+    const reader = connector.getReader();
+    const schemaProvider = connector.getSchemaProvider();
+    
+    const entities = await schemaProvider.listEntities();
+    expect(entities.length).toBeGreaterThan(0);
+    
+    if (entities.length > 0) {
+      const schema = await schemaProvider.getSchema(entities[0]);
+      expect(schema.fields).toBeDefined();
+    }
+  }, 30000);
+});
+```
+
+## Deployment
+
+### Building the Connector
+
+```bash
+# TypeScript
+npm run build
+
+# Python
+python setup.py sdist bdist_wheel
+```
+
+### Publishing
+
+#### npm Registry
+```bash
+npm publish
+```
+
+#### PyPI
+```bash
+twine upload dist/*
+```
+
+### Registration with Xether AI
+
+```typescript
+import { ConnectorRegistry } from '@xether-ai/connector-sdk';
+
+// Register the connector
+ConnectorRegistry.register('my-connector', MyConnector, {
+  name: 'My Custom Connector',
+  description: 'Connector for My API',
+  version: '1.0.0',
+  author: 'Your Name',
+  configSchema: MyConnectorConfigSchema
+});
+```
+
+## Best Practices
+
+1. **Error Handling**: Implement comprehensive error handling and retry logic
+2. **Logging**: Add detailed logging for debugging and monitoring
+3. **Performance**: Use batching and streaming for large datasets
+4. **Security**: Securely store and handle authentication credentials
+5. **Testing**: Write comprehensive unit and integration tests
+6. **Documentation**: Provide clear documentation and examples
+7. **Versioning**: Use semantic versioning for connector releases
+8. **Monitoring**: Add metrics and health checks
+9. **Configuration**: Use schema validation for configuration
+10. **Type Safety**: Use TypeScript or type hints for better maintainability
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Authentication Failures**: Check credentials and token refresh logic
+2. **Connection Timeouts**: Increase timeout values or implement retry logic
+3. **Memory Issues**: Use streaming instead of loading all data in memory
+4. **Schema Mismatches**: Implement proper schema mapping and validation
+5. **Rate Limiting**: Implement backoff and retry strategies
+
+### Debug Mode
+
+```typescript
+const connector = new MyConnector({
+  ...config,
+  debug: true,
+  logLevel: 'debug'
+});
+```
+
+This comprehensive guide provides everything needed to develop robust custom connectors for Xether AI. The modular architecture allows for flexibility while maintaining consistency with the platform's design patterns.
