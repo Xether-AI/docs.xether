@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -13,9 +13,11 @@ interface SearchResult {
 
 interface SearchProps {
   className?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
 }
 
-export function Search({ className }: SearchProps) {
+export function SearchInput({ className, placeholder, autoFocus }: SearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -169,12 +171,13 @@ export function Search({ className }: SearchProps) {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
-          placeholder="Search documentation..."
+          placeholder={placeholder || "Search documentation..."}
           className={cn(
             "w-full pl-10 pr-4 py-2 text-sm border rounded-lg transition-all",
             "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
             isOpen ? "border-primary" : "border-border"
           )}
+          autoFocus={autoFocus}
           style={{
             borderColor: isOpen ? "var(--primary)" : undefined,
             backgroundColor: "var(--background)",
