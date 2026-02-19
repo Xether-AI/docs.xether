@@ -1,0 +1,379 @@
+---
+title: Datasets API
+description: Complete reference for dataset management endpoints
+---
+
+# Datasets API
+
+The Datasets API allows you to create, manage, and version datasets programmatically. All endpoints require authentication via a valid API token.
+
+## Base URL
+```
+https://api.xether.ai/v1/datasets
+```
+
+## Endpoints
+
+### Create Dataset
+
+Creates a new dataset with the specified configuration.
+
+**Endpoint:** `POST /v1/datasets`
+
+**Request Body:**
+```json
+{
+  "name": "customer-data",
+  "description": "Customer information and transaction history",
+  "schema": {
+    "type": "struct",
+    "fields": [
+      {"name": "customer_id", "type": "string", "nullable": false},
+      {"name": "email", "type": "string", "nullable": false},
+      {"name": "created_at", "type": "timestamp", "nullable": false}
+    ]
+  },
+  "tags": ["production", "pii"],
+  "metadata": {
+    "source": "crm_system",
+    "retention_days": 365
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": "ds_1234567890",
+  "name": "customer-data",
+  "description": "Customer information and transaction history",
+  "schema": {...},
+  "tags": ["production", "pii"],
+  "metadata": {...},
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z",
+  "version": 1,
+  "status": "active"
+}
+```
+
+**Status Codes:**
+- `201 Created`: Dataset created successfully
+- `400 Bad Request`: Invalid request body
+- `409 Conflict`: Dataset with this name already exists
+- `422 Unprocessable Entity`: Schema validation failed
+
+### List Datasets
+
+Retrieves a paginated list of all datasets accessible to your account.
+
+**Endpoint:** `GET /v1/datasets`
+
+**Query Parameters:**
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 20, max: 100)
+- `tag` (string, optional): Filter by tag
+- `status` (string, optional): Filter by status (active, archived)
+- `search` (string, optional): Search in name and description
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "ds_1234567890",
+      "name": "customer-data",
+      "description": "Customer information and transaction history",
+      "version": 3,
+      "status": "active",
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-20T14:22:00Z",
+      "tags": ["production", "pii"]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 45,
+    "pages": 3
+  }
+}
+```
+
+### Get Dataset Details
+
+Retrieves detailed information about a specific dataset.
+
+**Endpoint:** `GET /v1/datasets/{id}`
+
+**Path Parameters:**
+- `id` (string): Dataset ID
+
+**Response:**
+```json
+{
+  "id": "ds_1234567890",
+  "name": "customer-data",
+  "description": "Customer information and transaction history",
+  "schema": {...},
+  "tags": ["production", "pii"],
+  "metadata": {...},
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-20T14:22:00Z",
+  "version": 3,
+  "status": "active",
+  "latest_version": {
+    "version": 3,
+    "created_at": "2024-01-20T14:22:00Z",
+    "record_count": 125000,
+    "size_bytes": 52428800,
+    "checksum": "sha256:abc123..."
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Dataset retrieved successfully
+- `404 Not Found`: Dataset not found
+
+### Update Dataset
+
+Updates an existing dataset's metadata.
+
+**Endpoint:** `PATCH /v1/datasets/{id}`
+
+**Path Parameters:**
+- `id` (string): Dataset ID
+
+**Request Body:**
+```json
+{
+  "description": "Updated description",
+  "tags": ["production", "pii", "enhanced"],
+  "metadata": {
+    "source": "crm_system",
+    "retention_days": 730,
+    "data_classification": "sensitive"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": "ds_1234567890",
+  "name": "customer-data",
+  "description": "Updated description",
+  "schema": {...},
+  "tags": ["production", "pii", "enhanced"],
+  "metadata": {...},
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-21T09:15:00Z",
+  "version": 3,
+  "status": "active"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Dataset updated successfully
+- `404 Not Found`: Dataset not found
+- `422 Unprocessable Entity`: Invalid update data
+
+### Delete Dataset
+
+Deletes a dataset and all its versions. This action is irreversible.
+
+**Endpoint:** `DELETE /v1/datasets/{id}`
+
+**Path Parameters:**
+- `id` (string): Dataset ID
+
+**Response:**
+```json
+{
+  "message": "Dataset ds_1234567890 deleted successfully",
+  "deleted_at": "2024-01-21T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Dataset deleted successfully
+- `404 Not Found`: Dataset not found
+- `409 Conflict`: Dataset cannot be deleted (referenced by active pipelines)
+
+### List Dataset Versions
+
+Retrieves all versions of a specific dataset.
+
+**Endpoint:** `GET /v1/datasets/{id}/versions`
+
+**Path Parameters:**
+- `id` (string): Dataset ID
+
+**Query Parameters:**
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 20)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "version": 3,
+      "created_at": "2024-01-20T14:22:00Z",
+      "record_count": 125000,
+      "size_bytes": 52428800,
+      "checksum": "sha256:abc123...",
+      "status": "active",
+      "created_by": "pipeline_789"
+    },
+    {
+      "version": 2,
+      "created_at": "2024-01-18T11:45:00Z",
+      "record_count": 124500,
+      "size_bytes": 52121600,
+      "checksum": "sha256:def456...",
+      "status": "archived",
+      "created_by": "pipeline_456"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 3,
+    "pages": 1
+  }
+}
+```
+
+### Get Dataset Version
+
+Retrieves details of a specific dataset version.
+
+**Endpoint:** `GET /v1/datasets/{id}/versions/{version}`
+
+**Path Parameters:**
+- `id` (string): Dataset ID
+- `version` (integer): Dataset version
+
+**Response:**
+```json
+{
+  "dataset_id": "ds_1234567890",
+  "version": 3,
+  "created_at": "2024-01-20T14:22:00Z",
+  "record_count": 125000,
+  "size_bytes": 52428800,
+  "checksum": "sha256:abc123...",
+  "status": "active",
+  "created_by": "pipeline_789",
+  "schema": {...},
+  "metadata": {
+    "processing_time_seconds": 245,
+    "source_files": ["customers_20240120.csv"],
+    "quality_score": 0.98
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Version retrieved successfully
+- `404 Not Found`: Dataset or version not found
+
+## Error Responses
+
+All endpoints may return these common error responses:
+
+### 401 Unauthorized
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing API token",
+    "details": "Please provide a valid API token in the Authorization header"
+  }
+}
+```
+
+### 429 Rate Limited
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests",
+    "details": "Rate limit exceeded. Try again in 60 seconds",
+    "retry_after": 60
+  }
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "An unexpected error occurred",
+    "details": "Error ID: err_abc123..."
+  }
+}
+```
+
+## SDK Examples
+
+### Python
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create dataset
+dataset = client.datasets.create(
+    name="sales-data",
+    description="Monthly sales transactions",
+    schema={
+        "type": "struct",
+        "fields": [
+            {"name": "transaction_id", "type": "string", "nullable": false},
+            {"name": "amount", "type": "decimal", "nullable": false}
+        ]
+    }
+)
+
+# List datasets
+datasets = client.datasets.list(tag="production")
+
+# Get dataset details
+dataset = client.datasets.get("ds_1234567890")
+```
+
+### JavaScript
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create dataset
+const dataset = await client.datasets.create({
+  name: 'sales-data',
+  description: 'Monthly sales transactions',
+  schema: {
+    type: 'struct',
+    fields: [
+      { name: 'transaction_id', type: 'string', nullable: false },
+      { name: 'amount', type: 'decimal', nullable: false }
+    ]
+  }
+});
+
+// List datasets
+const datasets = await client.datasets.list({ tag: 'production' });
+```
+
+## Best Practices
+
+- **Use descriptive names** that clearly indicate the dataset's purpose
+- **Include comprehensive schemas** to enable data validation and type checking
+- **Apply consistent tags** for better organization and filtering
+- **Set appropriate metadata** for governance and compliance
+- **Monitor dataset versions** to track data lineage and changes
+- **Implement proper access controls** for sensitive datasets
