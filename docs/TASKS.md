@@ -141,12 +141,12 @@
 - [x] Create collapsible sidebar (responsive, hidden on mobile)
 - [x] Organize docs by category
 - [x] Add active page highlighting
-- [ ] Implement breadcrumbs
-- [ ] Add "Next/Previous" page links (placeholder exists)
+- [x] Implement breadcrumbs
+- [x] Add "Next/Previous" page links
 
 ### 4.2 Version Selector
 
-- [ ] Implement version switching
+- [x] Implement version switching
 - [ ] Maintain separate docs for each version
 - [ ] Add version deprecation notices
 - [ ] Default to latest stable version
