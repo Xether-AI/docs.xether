@@ -1,0 +1,742 @@
+---
+title: Model Versioning
+description: Track, manage, and version machine learning models in your pipelines
+---
+
+# Model Versioning
+
+Xether AI provides comprehensive model versioning capabilities to track, manage, and deploy machine learning models throughout their lifecycle. This service ensures reproducibility, enables rollback capabilities, and maintains a complete history of model changes.
+
+## Overview
+
+Model versioning helps you:
+- Track model performance over time
+- Enable reproducible experiments
+- Support A/B testing and gradual rollouts
+- Maintain audit trails for compliance
+- Facilitate model rollback and recovery
+
+## Core Concepts
+
+### Model Registry
+Central repository for storing and managing model versions with metadata.
+
+### Versioning Strategy
+Semantic versioning with automatic increment based on model changes.
+
+### Lifecycle Management
+Track models through development, staging, and production phases.
+
+### Metadata Tracking
+Store comprehensive metadata including performance metrics, training data, and configuration.
+
+## Model Registration
+
+### Basic Model Registration
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-registration
+    config:
+      service: model_versioning
+      action: register
+      parameters:
+        model_name: "customer-churn-predictor"
+        model_path: "s3://models/churn/model.pkl"
+        version: "1.0.0"
+        description: "Initial model for customer churn prediction"
+        framework: "sklearn"
+        tags: ["production", "churn", "classification"]
+        metadata:
+          training_data_version: "v2.1.0"
+          accuracy: 0.87
+          precision: 0.85
+          recall: 0.89
+          training_date: "2024-01-15"
+```
+
+### Advanced Model Registration
+
+```yaml
+stages:
+  - type: augmentation
+    name: advanced-model-registration
+    config:
+      service: model_versioning
+      action: register
+      parameters:
+        model_name: "fraud-detection-model"
+        model_path: "s3://models/fraud/model.pt"
+        version: "2.1.0"
+        description: "Enhanced fraud detection with feature engineering"
+        framework: "pytorch"
+        tags: ["production", "fraud", "anomaly-detection"]
+        
+        # Model artifacts
+        artifacts:
+          - path: "s3://models/fraud/preprocessor.pkl"
+            type: "preprocessor"
+          - path: "s3://models/fraud/feature_mapping.json"
+            type: "configuration"
+          - path: "s3://models/fraud/training_script.py"
+            type: "source_code"
+            
+        # Performance metrics
+        metrics:
+          accuracy: 0.94
+          precision: 0.91
+          recall: 0.96
+          f1_score: 0.93
+          auc_roc: 0.98
+          false_positive_rate: 0.02
+          false_negative_rate: 0.04
+          
+        # Training metadata
+        training_metadata:
+          training_data_version: "v3.2.1"
+          training_dataset: "transactions_2024_q1"
+          training_samples: 1000000
+          validation_samples: 200000
+          test_samples: 200000
+          training_duration_hours: 4.5
+          gpu_hours: 12
+          hyperparameters:
+            learning_rate: 0.001
+            batch_size: 512
+            epochs: 100
+            optimizer: "adam"
+            
+        # Environment information
+        environment:
+          python_version: "3.9.7"
+          framework_version: "1.12.1"
+          cuda_version: "11.6"
+          dependencies:
+            - "torch==1.12.1"
+            - "scikit-learn==1.1.1"
+            - "pandas==1.4.2"
+            - "numpy==1.21.5"
+            
+        # Deployment configuration
+        deployment:
+          target_environment: "production"
+          auto_deploy: false
+          canary_percentage: 10
+          rollback_threshold: 0.85
+          
+        # Validation
+        validation:
+          cross_validation_folds: 5
+          statistical_tests: ["ks_test", "chi_square_test"]
+          bias_detection: true
+          fairness_metrics: ["demographic_parity", "equal_opportunity"]
+```
+
+## Version Management
+
+### Semantic Versioning
+
+Xether AI follows semantic versioning: `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes in model architecture or API
+- **MINOR**: New features or significant improvements
+- **PATCH**: Bug fixes or minor improvements
+
+### Automatic Version Increment
+
+```yaml
+stages:
+  - type: augmentation
+    name: auto-version-model
+    config:
+      service: model_versioning
+      action: auto_version
+      parameters:
+        model_name: "recommendation-engine"
+        model_path: "s3://models/recommendation/latest/"
+        version_strategy: "auto"  # Options: auto, manual, semantic
+        
+        # Version increment rules
+        increment_rules:
+          performance_improvement: "patch"  # >5% improvement
+          new_features: "minor"
+          architecture_change: "major"
+          retraining: "patch"
+          
+        # Performance thresholds
+        performance_thresholds:
+          accuracy_improvement: 0.05
+          precision_improvement: 0.03
+          recall_improvement: 0.03
+          f1_improvement: 0.04
+          
+        # Comparison baseline
+        baseline_version: "latest"
+        comparison_metrics: ["accuracy", "precision", "recall", "f1_score"]
+```
+
+### Manual Version Control
+
+```yaml
+stages:
+  - type: augmentation
+    name: manual-version-control
+    config:
+      service: model_versioning
+      action: version
+      parameters:
+        model_name: "sentiment-analyzer"
+        model_path: "s3://models/sentiment/model.joblib"
+        version: "3.2.1"  # Explicit version
+        version_reason: "Updated preprocessing pipeline"
+        change_type: "patch"  # Options: major, minor, patch
+        
+        # Version comparison
+        compare_with: "3.2.0"
+        comparison_report: true
+        
+        # Approval workflow
+        approval_required: true
+        approvers: ["ml-team-lead", "data-science-manager"]
+        approval_comment: "Improved preprocessing with better text normalization"
+```
+
+## Model Deployment
+
+### Staged Deployment
+
+```yaml
+stages:
+  - type: augmentation
+    name: staged-deployment
+    config:
+      service: model_versioning
+      action: deploy
+      parameters:
+        model_name: "customer-segmentation"
+        version: "2.0.0"
+        deployment_strategy: "staged"
+        
+        # Deployment stages
+        stages:
+          - name: "canary"
+            percentage: 5
+            duration_hours: 24
+            success_criteria:
+              accuracy_threshold: 0.85
+              latency_p99_ms: 100
+              error_rate: 0.01
+              
+          - name: "partial"
+            percentage: 50
+            duration_hours: 72
+            success_criteria:
+              accuracy_threshold: 0.87
+              latency_p99_ms: 150
+              error_rate: 0.02
+              
+          - name: "full"
+            percentage: 100
+            success_criteria:
+              accuracy_threshold: 0.88
+              latency_p99_ms: 200
+              error_rate: 0.03
+              
+        # Rollback configuration
+        rollback:
+          automatic: true
+          trigger_conditions:
+            - metric: "accuracy"
+              threshold: 0.8
+              comparison: "less_than"
+            - metric: "error_rate"
+              threshold: 0.05
+              comparison: "greater_than"
+          rollback_version: "previous_stable"
+          
+        # Monitoring
+        monitoring:
+          enabled: true
+          metrics:
+            - "accuracy"
+            - "latency"
+            - "throughput"
+            - "error_rate"
+            - "drift_score"
+          alert_channels: ["email", "slack"]
+```
+
+### A/B Testing Deployment
+
+```yaml
+stages:
+  - type: augmentation
+    name: ab-testing-deployment
+    config:
+      service: model_versioning
+      action: deploy
+      parameters:
+        model_name: "price-optimization"
+        deployment_strategy: "ab_test"
+        
+        # A/B test configuration
+        ab_test:
+          model_a:
+            version: "1.5.0"
+            traffic_percentage: 50
+            name: "current_model"
+          model_b:
+            version: "2.0.0"
+            traffic_percentage: 50
+            name: "enhanced_model"
+            
+        # Test duration and criteria
+        test_duration_days: 14
+        success_criteria:
+          primary_metric: "revenue_lift"
+          threshold: 0.02  # 2% revenue lift
+          statistical_significance: 0.95
+          
+        # Traffic routing
+        traffic_routing:
+          method: "user_id_hash"
+          stickiness: true
+          warmup_percentage: 5
+          warmup_duration_hours: 2
+          
+        # Analysis configuration
+        analysis:
+          metrics: ["revenue", "conversion_rate", "user_satisfaction"]
+          confidence_interval: 0.95
+          minimum_sample_size: 10000
+          
+        # Decision rules
+        decision_rules:
+          deploy_if: "revenue_lift > 0.02 AND statistical_significance > 0.95"
+          rollback_if: "revenue_lift < -0.01"
+          extend_test_if: "statistical_significance < 0.90"
+```
+
+## Model Monitoring
+
+### Performance Monitoring
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-monitoring
+    config:
+      service: model_versioning
+      action: monitor
+      parameters:
+        model_name: "loan-approval"
+        version: "latest"
+        
+        # Monitoring configuration
+        monitoring:
+          enabled: true
+          interval_minutes: 15
+          retention_days: 90
+          
+        # Performance metrics
+        performance_metrics:
+          - name: "accuracy"
+            threshold: 0.85
+            comparison: "greater_than"
+            alert: true
+          - name: "precision"
+            threshold: 0.80
+            comparison: "greater_than"
+            alert: true
+          - name: "recall"
+            threshold: 0.82
+            comparison: "greater_than"
+            alert: true
+          - name: "latency_p99"
+            threshold: 500
+            comparison: "less_than"
+            unit: "milliseconds"
+            alert: true
+          - name: "error_rate"
+            threshold: 0.05
+            comparison: "less_than"
+            alert: true
+            
+        # Data drift detection
+        drift_detection:
+          enabled: true
+          features: ["income", "credit_score", "employment_length"]
+          drift_threshold: 0.1
+          drift_method: "ks_test"  # Options: ks_test, wasserstein, psi
+          alert_on_drift: true
+          
+        # Concept drift detection
+        concept_drift:
+          enabled: true
+          detection_method: "ddm"  # Options: ddm, eddm, adwin
+          warning_threshold: 0.95
+          drift_threshold: 0.90
+          
+        # Alert configuration
+        alerts:
+          channels: ["email", "slack", "pagerduty"]
+          recipients: ["ml-team@company.com"]
+          escalation_rules:
+            - condition: "accuracy < 0.8"
+              action: "immediate_alert"
+            - condition: "drift_score > 0.2"
+              action: "schedule_review"
+```
+
+### Model Explainability
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-explainability
+    config:
+      service: model_versioning
+      action: explain
+      parameters:
+        model_name: "credit-scoring"
+        version: "1.2.0"
+        
+        # Explainability methods
+        explainability:
+          methods:
+            - name: "shap"
+              enabled: true
+              samples: 1000
+            - name: "lime"
+              enabled: true
+              samples: 500
+            - name: "feature_importance"
+              enabled: true
+              
+        # Feature analysis
+        feature_analysis:
+          top_features: 20
+          feature_groups:
+            demographic: ["age", "income", "education"]
+            financial: ["credit_score", "debt_to_income", "employment_length"]
+            behavioral: ["payment_history", "credit_utilization"]
+            
+        # Fairness analysis
+        fairness:
+          enabled: true
+          protected_attributes: ["gender", "race", "age_group"]
+          fairness_metrics:
+            - "demographic_parity"
+            - "equal_opportunity"
+            - "equalized_odds"
+            - "disparate_impact"
+          fairness_threshold: 0.8
+          
+        # Output configuration
+        output:
+          save_explanations: true
+          explanation_format: "json"
+          visualization: true
+          dashboard_integration: true
+```
+
+## Model Comparison
+
+### Version Comparison
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-comparison
+    config:
+      service: model_versioning
+      action: compare
+      parameters:
+        model_name: "demand-forecasting"
+        versions: ["1.0.0", "1.1.0", "2.0.0"]
+        
+        # Comparison metrics
+        comparison_metrics:
+          - "accuracy"
+          - "mae"
+          - "rmse"
+          - "mape"
+          - "training_time"
+          - "inference_latency"
+          - "model_size"
+          
+        # Test dataset
+        test_dataset: "demand_test_2024_q1"
+        test_samples: 50000
+        
+        # Statistical tests
+        statistical_tests:
+          - "paired_t_test"
+          - "wilcoxon_signed_rank"
+          - "bootstrap_test"
+          
+        # Visualization
+        visualization:
+          enabled: true
+          charts:
+            - "performance_comparison"
+            - "residual_analysis"
+            - "prediction_distribution"
+            - "feature_importance_comparison"
+            
+        # Report generation
+        report:
+          format: "html"
+          include_recommendations: true
+          include_statistical_significance: true
+          save_location: "s3://reports/model-comparison/"
+```
+
+### Benchmarking
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-benchmarking
+    config:
+      service: model_versioning
+      action: benchmark
+      parameters:
+        model_name: "image-classification"
+        benchmark_suite: "imagenet_subset"
+        
+        # Benchmark datasets
+        benchmark_datasets:
+          - name: "imagenet_val"
+            samples: 50000
+          - name: "cifar10_test"
+            samples: 10000
+          - name: "custom_validation"
+            samples: 20000
+            
+        # Performance benchmarks
+        performance_benchmarks:
+          - metric: "accuracy"
+            target: 0.90
+          - metric: "top5_accuracy"
+            target: 0.99
+          - metric: "inference_time_ms"
+            target: 10
+          - metric: "memory_usage_mb"
+            target: 512
+            
+        # Resource benchmarks
+        resource_benchmarks:
+          - metric: "gpu_utilization"
+            target: 0.8
+          - metric: "power_consumption_watts"
+            target: 250
+          - metric: "throughput_qps"
+            target: 1000
+            
+        # Comparison with baseline
+        baseline_model: "resnet50_v1.0"
+        improvement_threshold: 0.05
+```
+
+## Lifecycle Management
+
+### Model Retirement
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-retirement
+    config:
+      service: model_versioning
+      action: retire
+      parameters:
+        model_name: "legacy-prediction-model"
+        version: "1.0.0"
+        
+        # Retirement configuration
+        retirement:
+          reason: "Replaced by more accurate model v2.0.0"
+          retirement_date: "2024-03-01"
+          grace_period_days: 30
+          
+        # Data preservation
+        preserve_data:
+          model_artifacts: true
+          training_data: true
+          performance_metrics: true
+          deployment_logs: true
+          
+        # Notification
+        notification:
+          channels: ["email", "slack"]
+          recipients: ["ml-team@company.com", "stakeholders@company.com"]
+          message: "Model v1.0.0 will be retired on 2024-03-01. Please migrate to v2.0.0."
+          
+        # Migration assistance
+        migration_assistance:
+          recommended_version: "2.0.0"
+          migration_guide: "s3://docs/migration-guide-v1-to-v2.pdf"
+          support_contact: "ml-team@company.com"
+```
+
+### Model Archival
+
+```yaml
+stages:
+  - type: augmentation
+    name: model-archival
+    config:
+      service: model_versioning
+      action: archive
+      parameters:
+        model_name: "experimental-model"
+        version_pattern: "0.*"  # Archive all experimental versions
+        
+        # Archival policy
+        archival_policy:
+          archive_after_days: 90
+          keep_last_n_versions: 5
+          exclude_tags: ["production", "critical"]
+          
+        # Storage configuration
+        storage:
+          archive_location: "s3://model-archive/"
+          compression: true
+          encryption: true
+          
+        # Metadata preservation
+        preserve_metadata:
+          performance_metrics: true
+          training_configuration: true
+          deployment_history: true
+          audit_logs: true
+          
+        # Retrieval configuration
+        retrieval:
+          allowed_roles: ["ml_engineer", "data_scientist", "ml_manager"]
+          approval_required: true
+          retrieval_reason_required: true
+```
+
+## Best Practices
+
+1. **Semantic Versioning**: Follow consistent versioning strategy
+2. **Comprehensive Metadata**: Document all relevant information
+3. **Performance Tracking**: Monitor model performance continuously
+4. **Automated Testing**: Validate models before deployment
+5. **Gradual Rollouts**: Use staged deployment for production models
+6. **Drift Detection**: Monitor for data and concept drift
+7. **Backup Models**: Maintain fallback models for rollback
+8. **Documentation**: Keep detailed documentation of changes
+9. **Security**: Secure model artifacts and access controls
+10. **Compliance**: Follow regulatory requirements for model governance
+
+## Troubleshooting
+
+### Common Issues
+
+#### Version Conflicts
+- Use semantic versioning consistently
+- Implement proper version comparison logic
+- Maintain version history clearly
+
+#### Performance Degradation
+- Monitor performance metrics continuously
+- Set up automated alerts
+- Implement quick rollback procedures
+
+#### Deployment Failures
+- Validate model compatibility
+- Test in staging environment first
+- Check resource requirements
+
+#### Drift Detection False Positives
+- Adjust drift thresholds appropriately
+- Use multiple drift detection methods
+- Consider seasonal patterns
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Register a new model version
+model = client.models.register(
+    name="customer-churn-predictor",
+    model_path="s3://models/churn/model.pkl",
+    version="1.0.0",
+    framework="sklearn",
+    metrics={
+        "accuracy": 0.87,
+        "precision": 0.85,
+        "recall": 0.89
+    }
+)
+
+# Deploy model with staged rollout
+deployment = client.models.deploy(
+    name="customer-churn-predictor",
+    version="1.0.0",
+    strategy="staged",
+    stages=[
+        {"name": "canary", "percentage": 5, "duration_hours": 24},
+        {"name": "partial", "percentage": 50, "duration_hours": 72},
+        {"name": "full", "percentage": 100}
+    ]
+)
+
+# Monitor model performance
+monitoring = client.models.monitor(
+    name="customer-churn-predictor",
+    version="latest",
+    metrics=["accuracy", "latency", "error_rate"],
+    alert_channels=["email", "slack"]
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Register a new model version
+const model = await client.models.register({
+  name: 'customer-churn-predictor',
+  modelPath: 's3://models/churn/model.pkl',
+  version: '1.0.0',
+  framework: 'sklearn',
+  metrics: {
+    accuracy: 0.87,
+    precision: 0.85,
+    recall: 0.89
+  }
+});
+
+// Deploy model with staged rollout
+const deployment = await client.models.deploy({
+  name: 'customer-churn-predictor',
+  version: '1.0.0',
+  strategy: 'staged',
+  stages: [
+    { name: 'canary', percentage: 5, durationHours: 24 },
+    { name: 'partial', percentage: 50, durationHours: 72 },
+    { name: 'full', percentage: 100 }
+  ]
+});
+
+// Monitor model performance
+const monitoring = await client.models.monitor({
+  name: 'customer-churn-predictor',
+  version: 'latest',
+  metrics: ['accuracy', 'latency', 'error_rate'],
+  alertChannels: ['email', 'slack']
+});
+```
+
+This comprehensive model versioning service provides complete lifecycle management for machine learning models, ensuring reproducibility, traceability, and reliable deployment capabilities.

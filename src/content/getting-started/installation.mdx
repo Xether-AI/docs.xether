@@ -1,0 +1,965 @@
+---
+title: Installation
+description: Complete installation guide for Xether AI platform and SDKs
+---
+
+# Installation
+
+This guide covers the installation of Xether AI platform components, SDKs, and development tools. Choose the installation method that best fits your use case.
+
+## System Requirements
+
+### Minimum Requirements
+
+**Development Environment**
+- CPU: 2 cores
+- Memory: 4GB RAM
+- Storage: 10GB available space
+- Network: Internet connection for SDK downloads
+
+**Production Environment**
+- CPU: 4 cores (8+ recommended)
+- Memory: 8GB RAM (16GB+ recommended)
+- Storage: 100GB SSD (500GB+ recommended)
+- Network: 1Gbps connection
+
+### Supported Platforms
+
+**Operating Systems**
+- Linux: Ubuntu 20.04+, CentOS 8+, RHEL 8+
+- macOS: 11.0+ (Big Sur)
+- Windows: 10/11 (with WSL2 recommended)
+
+**Container Platforms**
+- Docker 20.10+
+- Kubernetes 1.24+
+- Podman 3.0+
+
+**Cloud Providers**
+- AWS: ECS, EKS, EC2
+- Google Cloud: GKE, Cloud Run
+- Azure: AKS, Container Instances
+
+## SDK Installation
+
+### Python SDK
+
+#### Prerequisites
+- Python 3.8 or higher
+- pip package manager
+- Virtual environment (recommended)
+
+#### Installation Methods
+
+**Standard Installation**
+```bash
+pip install xether-ai
+```
+
+**With Development Dependencies**
+```bash
+pip install xether-ai[dev]
+```
+
+**With All Optional Dependencies**
+```bash
+pip install xether-ai[all]
+```
+
+**From Source**
+```bash
+git clone https://github.com/xether-ai/python-sdk.git
+cd python-sdk
+pip install -e .
+```
+
+**Verification**
+```python
+import xether_ai
+print(f"Xether AI SDK version: {xether_ai.__version__}")
+
+# Test connection
+client = xether_ai.Client(api_key="your-api-key")
+datasets = client.datasets.list()
+print(f"Connected successfully! Found {len(datasets)} datasets")
+```
+
+### JavaScript/TypeScript SDK
+
+#### Prerequisites
+- Node.js 16.0 or higher
+- npm 7.0 or higher
+- TypeScript 4.0+ (for TypeScript projects)
+
+#### Installation Methods
+
+**npm Installation**
+```bash
+npm install @xether-ai/sdk
+```
+
+**yarn Installation**
+```bash
+yarn add @xether-ai/sdk
+```
+
+**pnpm Installation**
+```bash
+pnpm add @xether-ai/sdk
+```
+
+**Development Installation**
+```bash
+git clone https://github.com/xether-ai/javascript-sdk.git
+cd javascript-sdk
+npm install
+npm run build
+npm link
+```
+
+**Verification**
+```javascript
+// JavaScript
+const { XetherAI } = require('@xether-ai/sdk');
+
+// TypeScript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+console.log('Xether AI SDK installed successfully!');
+```
+
+### Go SDK
+
+#### Prerequisites
+- Go 1.19 or higher
+- Git (for source installation)
+
+#### Installation Methods
+
+**Go Modules Installation**
+```bash
+go get github.com/xether-ai/go-sdk
+```
+
+**From Source**
+```bash
+git clone https://github.com/xether-ai/go-sdk.git
+cd go-sdk
+go install ./...
+```
+
+**Verification**
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    client := xetherai.NewClient("your-api-key")
+    fmt.Println("Xether AI Go SDK installed successfully!")
+}
+```
+
+## Platform Installation
+
+### Docker Installation
+
+#### Prerequisites
+- Docker 20.10+
+- Docker Compose 2.0+
+
+#### Quick Start
+
+**Using Docker Compose**
+```bash
+# Clone the repository
+git clone https://github.com/xether-ai/platform.git
+cd platform
+
+# Start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+**Individual Service Installation**
+```bash
+# API Gateway
+docker run -d \
+  --name xether-api-gateway \
+  -p 8080:8080 \
+  -e API_KEY=your-api-key \
+  xether-ai/api-gateway:latest
+
+# Pipeline Service
+docker run -d \
+  --name xether-pipeline-service \
+  -p 8081:8080 \
+  -e DATABASE_URL=postgresql://user:pass@localhost:5432/xether \
+  xether-ai/pipeline-service:latest
+
+# Execution Service
+docker run -d \
+  --name xether-execution-service \
+  -p 8082:8080 \
+  -e QUEUE_URL=redis://localhost:6379 \
+  xether-ai/execution-service:latest
+```
+
+#### Docker Compose Configuration
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  api-gateway:
+    image: xether-ai/api-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - API_KEY=${XETHER_AI_API_KEY}
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/xether
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  pipeline-service:
+    image: xether-ai/pipeline-service:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/xether
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - postgres
+      - kafka
+    restart: unless-stopped
+
+  execution-service:
+    image: xether-ai/execution-service:latest
+    ports:
+      - "8082:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/xether
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  ml-service:
+    image: xether-ai/ml-service:latest
+    ports:
+      - "8083:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/xether
+      - MODEL_STORAGE_PATH=/models
+    volumes:
+      - ./models:/models
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=xether
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+### Kubernetes Installation
+
+#### Prerequisites
+- Kubernetes 1.24+
+- kubectl configured
+- Helm 3.0+ (recommended)
+
+#### Installation with Helm
+
+**Add Helm Repository**
+```bash
+helm repo add xether-ai https://charts.xether.ai
+helm repo update
+```
+
+**Install Platform**
+```bash
+# Create namespace
+kubectl create namespace xether-ai
+
+# Install with default values
+helm install xether-platform xether-ai/xether-platform \
+  --namespace xether-ai
+
+# Install with custom values
+helm install xether-platform xether-ai/xether-platform \
+  --namespace xether-ai \
+  --values custom-values.yaml
+```
+
+**Custom Values Example**
+```yaml
+# custom-values.yaml
+apiGateway:
+  replicaCount: 3
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+pipelineService:
+  replicaCount: 2
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+executionService:
+  replicaCount: 5
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1000m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "secure-password"
+    database: "xether"
+
+redis:
+  enabled: true
+  auth:
+    password: "secure-password"
+
+kafka:
+  enabled: true
+  replicaCount: 3
+```
+
+#### Manual Kubernetes Installation
+
+**Namespace and ConfigMaps**
+```yaml
+# namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: xether-ai
+
+---
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xether-config
+  namespace: xether-ai
+data:
+  DATABASE_URL: "postgresql://postgres:password@postgres:5432/xether"
+  REDIS_URL: "redis://redis:6379"
+  KAFKA_BROKERS: "kafka:9092"
+  LOG_LEVEL: "info"
+```
+
+**Secrets**
+```yaml
+# secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: xether-secrets
+  namespace: xether-ai
+type: Opaque
+data:
+  API_KEY: <base64-encoded-api-key>
+  DATABASE_PASSWORD: <base64-encoded-password>
+  REDIS_PASSWORD: <base64-encoded-password>
+```
+
+**Deployments**
+```yaml
+# api-gateway-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: xether-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: xether-ai/api-gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: xether-secrets
+              key: API_KEY
+        envFrom:
+        - configMapRef:
+            name: xether-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# api-gateway-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: xether-ai
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
+```
+
+## Cloud Installation
+
+### AWS Installation
+
+#### ECS Deployment
+
+**Task Definition**
+```json
+{
+  "family": "xether-platform",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::account:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::account:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "api-gateway",
+      "image": "xether-ai/api-gateway:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://user:pass@rds-endpoint:5432/xether"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:region:account:secret:xether-api-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/xether-platform",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### EKS Deployment
+
+**EKS Cluster Creation**
+```bash
+# Create EKS cluster
+eksctl create cluster \
+  --name xether-cluster \
+  --region us-west-2 \
+  --nodegroup-name standard-workers \
+  --node-type t3.medium \
+  --nodes 3 \
+  --nodes-min 1 \
+  --nodes-max 4 \
+  --managed
+
+# Install Xether platform
+helm install xether-platform xether-ai/xether-platform \
+  --namespace xether-ai \
+  --create-namespace
+```
+
+### Google Cloud Installation
+
+#### GKE Deployment
+
+**Cluster Creation**
+```bash
+# Create GKE cluster
+gcloud container clusters create xether-cluster \
+  --region us-central1 \
+  --num-nodes 3 \
+  --machine-type e2-standard-2 \
+  --enable-autoscaling \
+  --min-nodes 1 \
+  --max-nodes 10
+
+# Get credentials
+gcloud container clusters get-credentials xether-cluster \
+  --region us-central1
+
+# Install platform
+helm install xether-platform xether-ai/xether-platform \
+  --namespace xether-ai \
+  --create-namespace
+```
+
+#### Cloud Run Deployment
+
+```bash
+# Build and deploy API Gateway
+gcloud builds submit --tag gcr.io/PROJECT-ID/api-gateway
+
+# Deploy to Cloud Run
+gcloud run deploy api-gateway \
+  --image gcr.io/PROJECT-ID/api-gateway \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars DATABASE_URL=postgresql://user:pass@host:5432/xether \
+  --set-secrets API_KEY=xether-api-key
+```
+
+### Azure Installation
+
+#### AKS Deployment
+
+**Cluster Creation**
+```bash
+# Create resource group
+az group create --name xether-rg --location eastus
+
+# Create AKS cluster
+az aks create \
+  --resource-group xether-rg \
+  --name xether-cluster \
+  --node-count 3 \
+  --node-vm-size Standard_B2s \
+  --enable-addons monitoring \
+  --generate-ssh-keys
+
+# Get credentials
+az aks get-credentials --resource-group xether-rg --name xether-cluster
+
+# Install platform
+helm install xether-platform xether-ai/xether-platform \
+  --namespace xether-ai \
+  --create-namespace
+```
+
+## Development Setup
+
+### Local Development Environment
+
+#### Prerequisites
+- Docker Desktop
+- Node.js 16+
+- Python 3.8+
+- Go 1.19+
+
+#### Setup Script
+
+```bash
+#!/bin/bash
+# setup-dev.sh
+
+echo "Setting up Xether AI development environment..."
+
+# Check prerequisites
+command -v docker >/dev/null 2>&1 || { echo "Docker is required but not installed."; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "Node.js is required but not installed."; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "Python 3 is required but not installed."; exit 1; }
+
+# Clone repositories
+echo "Cloning repositories..."
+git clone https://github.com/xether-ai/platform.git
+git clone https://github.com/xether-ai/python-sdk.git
+git clone https://github.com/xether-ai/javascript-sdk.git
+git clone https://github.com/xether-ai/go-sdk.git
+
+# Setup Python SDK
+echo "Setting up Python SDK..."
+cd python-sdk
+python3 -m venv venv
+source venv/bin/activate
+pip install -e .[dev]
+cd ..
+
+# Setup JavaScript SDK
+echo "Setting up JavaScript SDK..."
+cd javascript-sdk
+npm install
+npm run build
+cd ..
+
+# Setup Go SDK
+echo "Setting up Go SDK..."
+cd go-sdk
+go mod download
+go install ./...
+cd ..
+
+# Start platform services
+echo "Starting platform services..."
+cd platform
+docker-compose up -d
+
+# Wait for services to be ready
+echo "Waiting for services to be ready..."
+sleep 30
+
+# Run health check
+echo "Running health check..."
+curl -f http://localhost:8080/health || echo "API Gateway not ready yet"
+
+echo "Development environment setup complete!"
+echo "API Gateway: http://localhost:8080"
+echo "Pipeline Service: http://localhost:8081"
+echo "Execution Service: http://localhost:8082"
+echo "ML Service: http://localhost:8083"
+```
+
+### IDE Configuration
+
+#### VS Code Setup
+
+**Extensions**
+```json
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-vscode.vscode-typescript-next",
+    "golang.go",
+    "ms-vscode.vscode-docker",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "redhat.vscode-yaml"
+  ]
+}
+```
+
+**Workspace Settings**
+```json
+{
+  "python.defaultInterpreterPath": "./python-sdk/venv/bin/python",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "go.useLanguageServer": true,
+  "go.formatTool": "goimports",
+  "docker.languageserver.formatter.enable": true
+}
+```
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Core Configuration
+export XETHER_AI_API_KEY="your-api-key"
+export XETHER_AI_BASE_URL="https://api.xether.ai"
+export XETHER_AI_TIMEOUT="30s"
+
+# Database Configuration
+export DATABASE_URL="postgresql://user:password@localhost:5432/xether"
+export DATABASE_POOL_SIZE="20"
+export DATABASE_MAX_CONNECTIONS="100"
+
+# Cache Configuration
+export REDIS_URL="redis://localhost:6379"
+export CACHE_TTL="3600"
+
+# Message Queue Configuration
+export KAFKA_BROKERS="localhost:9092"
+export KAFKA_CONSUMER_GROUP="xether-platform"
+
+# Logging Configuration
+export LOG_LEVEL="info"
+export LOG_FORMAT="json"
+export LOG_OUTPUT="stdout"
+
+# Security Configuration
+export JWT_SECRET="your-jwt-secret"
+export ENCRYPTION_KEY="your-encryption-key"
+export TLS_CERT_PATH="/path/to/cert.pem"
+export TLS_KEY_PATH="/path/to/key.pem"
+```
+
+### Configuration Files
+
+**YAML Configuration**
+```yaml
+# config.yaml
+server:
+  host: "0.0.0.0"
+  port: 8080
+  timeout: 30s
+
+database:
+  url: "postgresql://user:password@localhost:5432/xether"
+  pool_size: 20
+  max_connections: 100
+
+cache:
+  url: "redis://localhost:6379"
+  ttl: 3600
+
+kafka:
+  brokers: ["localhost:9092"]
+  consumer_group: "xether-platform"
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+security:
+  jwt_secret: "your-jwt-secret"
+  encryption_key: "your-encryption-key"
+  tls:
+    cert_path: "/path/to/cert.pem"
+    key_path: "/path/to/key.pem"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Installation Failures
+
+**Permission Denied (Linux/macOS)**
+```bash
+# Fix permissions
+sudo chown -R $USER:$USER ~/.xether-ai
+
+# Or use virtual environment
+python3 -m venv ~/.xether-ai/venv
+source ~/.xether-ai/venv/bin/activate
+pip install xether-ai
+```
+
+**Network Connection Issues**
+```bash
+# Check internet connection
+curl -I https://api.xether.ai
+
+# Use proxy if needed
+export HTTPS_PROXY=http://proxy.company.com:8080
+export HTTP_PROXY=http://proxy.company.com:8080
+pip install xether-ai
+```
+
+#### Docker Issues
+
+**Port Conflicts**
+```bash
+# Check port usage
+netstat -tulpn | grep :8080
+
+# Use different ports
+docker-compose up -d --scale api-gateway=1 -p 8080:8080
+```
+
+**Resource Limits**
+```bash
+# Check Docker resources
+docker system df
+docker system prune
+
+# Increase Docker memory allocation in Docker Desktop settings
+```
+
+#### Kubernetes Issues
+
+**Pod Not Starting**
+```bash
+# Check pod status
+kubectl get pods -n xether-ai
+
+# Check pod logs
+kubectl logs -f deployment/api-gateway -n xether-ai
+
+# Describe pod for detailed information
+kubectl describe pod <pod-name> -n xether-ai
+```
+
+**Service Not Accessible**
+```bash
+# Check service status
+kubectl get services -n xether-ai
+
+# Check endpoints
+kubectl get endpoints -n xether-ai
+
+# Port-forward for testing
+kubectl port-forward service/api-gateway 8080:80 -n xether-ai
+```
+
+### Health Checks
+
+**API Health Check**
+```bash
+curl -f http://localhost:8080/health
+```
+
+**Service Health Check**
+```bash
+# Check all services
+docker-compose ps
+
+# Check individual service
+curl -f http://localhost:8081/health  # Pipeline Service
+curl -f http://localhost:8082/health  # Execution Service
+curl -f http://localhost:8083/health  # ML Service
+```
+
+**Database Health Check**
+```bash
+# PostgreSQL
+psql -h localhost -U postgres -d xether -c "SELECT 1;"
+
+# Redis
+redis-cli -h localhost ping
+```
+
+## Performance Tuning
+
+### Production Optimizations
+
+**Database Optimization**
+```sql
+-- PostgreSQL configuration
+ALTER SYSTEM SET shared_buffers = '256MB';
+ALTER SYSTEM SET effective_cache_size = '1GB';
+ALTER SYSTEM SET maintenance_work_mem = '64MB';
+ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+ALTER SYSTEM SET wal_buffers = '16MB';
+ALTER SYSTEM SET default_statistics_target = 100;
+SELECT pg_reload_conf();
+```
+
+**Cache Optimization**
+```bash
+# Redis configuration
+echo "maxmemory 512mb" >> /etc/redis/redis.conf
+echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
+systemctl restart redis
+```
+
+**Application Optimization**
+```yaml
+# Production deployment configuration
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "500m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+env:
+- name: GOMAXPROCS
+  value: "4"
+- name: GOGC
+  value: "100"
+```
+
+This comprehensive installation guide covers all aspects of setting up the Xether AI platform, from SDK installation to production deployment, with troubleshooting and performance optimization guidance.
