@@ -48,7 +48,7 @@ export function DocNavigation({ className }: DocNavigationProps) {
   return (
     <div
       className={cn(
-        "mt-12 flex items-center justify-between border-t pt-6",
+        "mt-12 flex items-center justify-between border-t p-4",
         className
       )}
       style={{ borderColor: "var(--border)" }}

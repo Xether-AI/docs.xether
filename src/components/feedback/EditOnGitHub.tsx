@@ -30,12 +30,7 @@ export function EditOnGitHub({ className }: EditOnGitHubProps) {
   const githubUrl = getGitHubUrl();
 
   return (
-    <div className={cn("flex items-center justify-between py-4 border-t", className)} style={{ borderColor: "var(--border)" }}>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Github className="h-4 w-4" />
-        <span>Found an issue? Want to contribute?</span>
-      </div>
-      
+    <div className={cn("flex items-center justify-end py-4 border-t", className)} style={{ borderColor: "var(--border)" }}>      
       <a
         href={githubUrl}
         target="_blank"
