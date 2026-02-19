@@ -1,0 +1,511 @@
+---
+title: Amazon S3 Integration
+description: Complete guide for integrating Xether AI with Amazon S3
+---
+
+# Amazon S3 Integration
+
+This guide covers how to connect Xether AI to Amazon S3 for data ingestion and output. S3 is commonly used for data lake storage and as a staging area for data pipelines.
+
+## Prerequisites
+
+- AWS account with appropriate permissions
+- S3 bucket created
+- AWS credentials configured
+- Xether AI account with pipeline creation permissions
+
+## Authentication Setup
+
+### Option 1: IAM User Access Keys
+
+1. Create an IAM user in AWS Console
+2. Attach the following policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::your-bucket-name",
+        "arn:aws:s3:::your-bucket-name/*"
+      ]
+    }
+  ]
+}
+```
+
+3. Generate access keys and store them securely
+
+### Option 2: IAM Role (Recommended for EC2/ECS)
+
+1. Create an IAM role with the policy above
+2. Attach the role to your EC2 instance or ECS task
+3. Xether AI will automatically use the role credentials
+
+### Option 3: Temporary Credentials
+
+For enhanced security, use AWS STS to generate temporary credentials:
+
+```python
+import boto3
+
+sts_client = boto3.client('sts')
+response = sts_client.get_session_token(
+    DurationSeconds=3600
+)
+
+credentials = response['Credentials']
+```
+
+## Pipeline Configuration
+
+### Basic S3 Ingestion
+
+```yaml
+name: s3-data-ingestion
+description: Ingest data from S3 bucket
+datasets:
+  input: raw-s3-data
+  output: processed-data
+stages:
+  - type: ingestion
+    name: load-from-s3
+    config:
+      source: s3://your-bucket/path/to/data/
+      format: csv
+      credentials:
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        region: us-east-1
+      options:
+        header: true
+        infer_schema: true
+        delimiter: ","
+        file_pattern: "*.csv"
+        recursive: true
+```
+
+### Advanced S3 Configuration
+
+```yaml
+stages:
+  - type: ingestion
+    name: advanced-s3-load
+    config:
+      source: s3://your-bucket/data/
+      format: parquet
+      credentials:
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        region: us-east-1
+        session_token: ${AWS_SESSION_TOKEN}
+      options:
+        file_pattern: "data-*.parquet"
+        recursive: true
+        partition_discovery: true
+        schema_evolution: true
+        compression: snappy
+        max_files_per_batch: 100
+        max_file_size_mb: 1024
+```
+
+### S3 Output Configuration
+
+```yaml
+stages:
+  - type: output
+    name: write-to-s3
+    config:
+      destination: s3://your-bucket/processed-data/
+      format: parquet
+      credentials:
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        region: us-east-1
+      options:
+        partition_by: ["year", "month", "day"]
+        compression: snappy
+        overwrite: true
+        file_naming: "output-{timestamp}-{uuid}.parquet"
+        create_path: true
+```
+
+## Supported File Formats
+
+### CSV Files
+```yaml
+config:
+  source: s3://bucket/data/
+  format: csv
+  options:
+    header: true
+    infer_schema: true
+    delimiter: ","
+    quote: "\""
+    escape: "\\"
+    null_value: ""
+    date_format: "yyyy-MM-dd"
+    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+```
+
+### JSON Files
+```yaml
+config:
+  source: s3://bucket/data/
+  format: json
+  options:
+    multiline: false
+    allow_unquoted_field_names: false
+    allow_single_quotes: false
+    primitives_as_string: false
+```
+
+### Parquet Files
+```yaml
+config:
+  source: s3://bucket/data/
+  format: parquet
+  options:
+    compression: snappy
+    merge_schema: false
+    push_down_predicate: true
+    push_down_filters: true
+```
+
+### Avro Files
+```yaml
+config:
+  source: s3://bucket/data/
+  format: avro
+  options:
+    avro_schema: null
+    ignore_extension: false
+```
+
+## Path Patterns and Wildcards
+
+### Basic Patterns
+- `*.csv` - All CSV files in root directory
+- `data/*.json` - All JSON files in data directory
+- `**/*` - All files recursively
+- `2024/01/**/*.parquet` - All Parquet files in January 2024
+
+### Date-based Patterns
+```yaml
+config:
+  source: s3://bucket/data/
+  file_pattern: "data-{date:yyyy-MM-dd}.csv"
+  date_range:
+    start: "2024-01-01"
+    end: "2024-01-31"
+```
+
+### Partitioned Data
+```yaml
+config:
+  source: s3://bucket/data/
+  partition_discovery: true
+  partition_pattern: "year={year}/month={month}/day={day}/"
+```
+
+## Environment Variables
+
+Store your AWS credentials as environment variables for security:
+
+```bash
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_REGION="us-east-1"
+export AWS_SESSION_TOKEN="your-session-token"  # Optional
+```
+
+Reference them in your pipeline configuration:
+
+```yaml
+config:
+  credentials:
+    access_key_id: ${AWS_ACCESS_KEY_ID}
+    secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+    region: ${AWS_REGION}
+    session_token: ${AWS_SESSION_TOKEN}
+```
+
+## Performance Optimization
+
+### Parallel Processing
+```yaml
+config:
+  options:
+    max_files_per_batch: 50
+    max_file_size_mb: 512
+    parallel_read: true
+    max_parallel_readers: 10
+```
+
+### Caching
+```yaml
+config:
+  options:
+    cache_enabled: true
+    cache_ttl_seconds: 3600
+    cache_size_mb: 1024
+```
+
+### Compression
+```yaml
+config:
+  options:
+    compression: snappy  # For Parquet
+    compression: gzip    # For CSV/JSON
+    compression_level: 6
+```
+
+## Error Handling
+
+### Retry Configuration
+```yaml
+config:
+  retry:
+    max_attempts: 3
+    backoff_seconds: 30
+    exponential_backoff: true
+  error_handling:
+    skip_corrupted_files: true
+    log_failed_files: true
+    continue_on_error: false
+```
+
+### Validation
+```yaml
+config:
+  validation:
+    check_file_integrity: true
+    validate_checksum: true
+    min_file_size_bytes: 0
+    max_file_size_mb: 10240
+```
+
+## Monitoring and Logging
+
+### S3 Access Logging
+Enable S3 access logging to monitor data access:
+
+```yaml
+config:
+  monitoring:
+    log_s3_operations: true
+    log_file_details: true
+    log_performance_metrics: true
+```
+
+### Custom Metrics
+```yaml
+config:
+  metrics:
+    track_file_count: true
+    track_data_volume: true
+    track_processing_time: true
+    custom_tags:
+      environment: production
+      data_source: s3
+```
+
+## Security Best Practices
+
+### IAM Policies
+Use least privilege access:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::your-bucket",
+        "arn:aws:s3:::your-bucket/input/*"
+      ],
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": ["203.0.113.0/24"]
+        }
+      }
+    }
+  ]
+}
+```
+
+### S3 Bucket Policies
+Restrict access to specific IP ranges:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowXetherAI",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:role/xether-ai-role"
+      },
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::your-bucket/*"
+    }
+  ]
+}
+```
+
+### Encryption
+Enable server-side encryption:
+
+```yaml
+config:
+  options:
+    server_side_encryption: AES256
+    # or
+    server_side_encryption: aws:kms
+    kms_key_id: your-kms-key-id
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Access Denied
+- Verify IAM permissions
+- Check bucket policies
+- Ensure correct region
+- Validate credentials
+
+#### Connection Timeout
+- Increase timeout values
+- Check VPC configuration
+- Verify network connectivity
+- Use VPC endpoints for S3
+
+#### File Not Found
+- Verify file paths
+- Check file patterns
+- Ensure files exist
+- Validate case sensitivity
+
+#### Performance Issues
+- Increase parallel readers
+- Optimize file sizes
+- Use appropriate compression
+- Enable caching
+
+### Debug Configuration
+```yaml
+config:
+  debug:
+    log_s3_requests: true
+    log_response_headers: true
+    log_request_body: false
+    verbose_errors: true
+```
+
+## SDK Examples
+
+### Python SDK
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create S3 integration pipeline
+pipeline = client.pipelines.create(
+    name="s3-integration",
+    config={
+        "datasets": {
+            "input": "s3-raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-from-s3",
+                "config": {
+                    "source": "s3://my-bucket/data/",
+                    "format": "parquet",
+                    "credentials": {
+                        "access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
+                        "secret_access_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                        "region": "us-east-1"
+                    },
+                    "options": {
+                        "file_pattern": "*.parquet",
+                        "recursive": true
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### JavaScript SDK
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create S3 integration pipeline
+const pipeline = await client.pipelines.create({
+  name: 's3-integration',
+  config: {
+    datasets: {
+      input: 's3-raw-data',
+      output: 'processed-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-from-s3',
+        config: {
+          source: 's3://my-bucket/data/',
+          format: 'parquet',
+          credentials: {
+            access_key_id: process.env.AWS_ACCESS_KEY_ID,
+            secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+            region: 'us-east-1'
+          },
+          options: {
+            file_pattern: '*.parquet',
+            recursive: true
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+## Best Practices
+
+1. **Use IAM roles instead of access keys** when possible
+2. **Enable S3 server-side encryption** for sensitive data
+3. **Use appropriate file formats** (Parquet for analytics, CSV for compatibility)
+4. **Optimize file sizes** (100MB-1GB per file is optimal)
+5. **Implement proper partitioning** for large datasets
+6. **Monitor S3 costs** and optimize data lifecycle policies
+7. **Use VPC endpoints** for improved security and performance
+8. **Set up proper logging** for audit and debugging
+9. **Test with small datasets** before processing large volumes
+10. **Implement retry logic** for transient failures
