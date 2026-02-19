@@ -1,0 +1,473 @@
+---
+title: Pipelines API
+description: Complete reference for pipeline management and execution endpoints
+---
+
+# Pipelines API
+
+The Pipelines API allows you to create, manage, and execute data pipelines programmatically. All endpoints require authentication via a valid API token.
+
+## Base URL
+```
+https://api.xether.ai/v1/pipelines
+```
+
+## Endpoints
+
+### Create Pipeline
+
+Creates a new data pipeline with the specified configuration.
+
+**Endpoint:** `POST /v1/pipelines`
+
+**Request Body:**
+```json
+{
+  "name": "customer-data-processing",
+  "description": "Process and clean customer data from CRM",
+  "schedule": "0 2 * * *",
+  "config": {
+    "datasets": {
+      "input": "raw-customer-data",
+      "output": "processed-customer-data"
+    },
+    "stages": [
+      {
+        "type": "ingestion",
+        "name": "load-customer-data",
+        "config": {
+          "source": "s3://raw-data/customers/",
+          "format": "csv",
+          "options": {
+            "header": true,
+            "infer_schema": true
+          }
+        }
+      },
+      {
+        "type": "cleaning",
+        "name": "remove-duplicates",
+        "config": {
+          "strategy": "deduplicate",
+          "keys": ["customer_id", "email"]
+        }
+      },
+      {
+        "type": "validation",
+        "name": "validate-emails",
+        "config": {
+          "rules": [
+            {
+              "field": "email",
+              "type": "regex",
+              "pattern": "^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$"
+            }
+          ]
+        }
+      },
+      {
+        "type": "transformation",
+        "name": "normalize-phones",
+        "config": {
+          "transformations": [
+            {
+              "field": "phone",
+              "type": "normalize_phone",
+              "country_code": "US"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "environment": {
+    "compute": "standard",
+    "memory": "4GB",
+    "timeout": 3600
+  },
+  "notifications": {
+    "on_success": ["team@company.com"],
+    "on_failure": ["alerts@company.com"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": "pipe_1234567890",
+  "name": "customer-data-processing",
+  "description": "Process and clean customer data from CRM",
+  "schedule": "0 2 * * *",
+  "status": "active",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z",
+  "config": {...},
+  "environment": {...},
+  "notifications": {...},
+  "last_run": null,
+  "next_run": "2024-01-16T02:00:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created`: Pipeline created successfully
+- `400 Bad Request`: Invalid request body
+- `422 Unprocessable Entity`: Pipeline configuration validation failed
+
+### List Pipelines
+
+Retrieves a paginated list of all pipelines accessible to your account.
+
+**Endpoint:** `GET /v1/pipelines`
+
+**Query Parameters:**
+- `page` (integer, optional): Page number (default: 1)
+- `limit` (integer, optional): Items per page (default: 20, max: 100)
+- `status` (string, optional): Filter by status (active, paused, archived)
+- `search` (string, optional): Search in name and description
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "pipe_1234567890",
+      "name": "customer-data-processing",
+      "description": "Process and clean customer data from CRM",
+      "status": "active",
+      "schedule": "0 2 * * *",
+      "last_run": "2024-01-20T02:00:00Z",
+      "next_run": "2024-01-21T02:00:00Z",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 15,
+    "pages": 1
+  }
+}
+```
+
+### Get Pipeline Details
+
+Retrieves detailed information about a specific pipeline.
+
+**Endpoint:** `GET /v1/pipelines/{id}`
+
+**Path Parameters:**
+- `id` (string): Pipeline ID
+
+**Response:**
+```json
+{
+  "id": "pipe_1234567890",
+  "name": "customer-data-processing",
+  "description": "Process and clean customer data from CRM",
+  "schedule": "0 2 * * *",
+  "status": "active",
+  "config": {...},
+  "environment": {
+    "compute": "standard",
+    "memory": "4GB",
+    "timeout": 3600
+  },
+  "notifications": {
+    "on_success": ["team@company.com"],
+    "on_failure": ["alerts@company.com"]
+  },
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-18T14:22:00Z",
+  "last_run": {
+    "id": "exec_7890123456",
+    "status": "completed",
+    "started_at": "2024-01-20T02:00:00Z",
+    "completed_at": "2024-01-20T02:15:30Z",
+    "duration_seconds": 930
+  },
+  "next_run": "2024-01-21T02:00:00Z",
+  "run_statistics": {
+    "total_runs": 25,
+    "successful_runs": 23,
+    "failed_runs": 2,
+    "average_duration_seconds": 845
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Pipeline retrieved successfully
+- `404 Not Found`: Pipeline not found
+
+### Update Pipeline
+
+Updates an existing pipeline's configuration or metadata.
+
+**Endpoint:** `PATCH /v1/pipelines/{id}`
+
+**Path Parameters:**
+- `id` (string): Pipeline ID
+
+**Request Body:**
+```json
+{
+  "description": "Updated pipeline description",
+  "schedule": "0 3 * * *",
+  "environment": {
+    "compute": "high",
+    "memory": "8GB",
+    "timeout": 7200
+  },
+  "notifications": {
+    "on_success": ["team@company.com", "manager@company.com"],
+    "on_failure": ["alerts@company.com", "oncall@company.com"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": "pipe_1234567890",
+  "name": "customer-data-processing",
+  "description": "Updated pipeline description",
+  "schedule": "0 3 * * *",
+  "status": "active",
+  "config": {...},
+  "environment": {...},
+  "notifications": {...},
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-21T09:15:00Z",
+  "next_run": "2024-01-22T03:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Pipeline updated successfully
+- `404 Not Found`: Pipeline not found
+- `422 Unprocessable Entity`: Invalid update data
+
+### Delete Pipeline
+
+Deletes a pipeline. This action is irreversible.
+
+**Endpoint:** `DELETE /v1/pipelines/{id}`
+
+**Path Parameters:**
+- `id` (string): Pipeline ID
+
+**Response:**
+```json
+{
+  "message": "Pipeline pipe_1234567890 deleted successfully",
+  "deleted_at": "2024-01-21T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Pipeline deleted successfully
+- `404 Not Found`: Pipeline not found
+- `409 Conflict`: Pipeline cannot be deleted (has running executions)
+
+### Trigger Pipeline Execution
+
+Manually triggers a pipeline execution, overriding the schedule.
+
+**Endpoint:** `POST /v1/pipelines/{id}/run`
+
+**Path Parameters:**
+- `id` (string): Pipeline ID
+
+**Request Body (optional):**
+```json
+{
+  "parameters": {
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2024-01-31"
+    },
+    "batch_size": 1000
+  },
+  "dry_run": false
+}
+```
+
+**Response:**
+```json
+{
+  "execution_id": "exec_9876543210",
+  "pipeline_id": "pipe_1234567890",
+  "status": "pending",
+  "triggered_by": "api",
+  "parameters": {...},
+  "created_at": "2024-01-21T14:30:00Z",
+  "estimated_start": "2024-01-21T14:31:00Z"
+}
+```
+
+**Status Codes:**
+- `202 Accepted`: Pipeline execution triggered successfully
+- `404 Not Found`: Pipeline not found
+- `409 Conflict`: Pipeline already has a running execution
+
+## Pipeline Configuration Schema
+
+### Stage Types
+
+#### Ingestion Stage
+```yaml
+type: ingestion
+name: load-data
+config:
+  source: string              # Required: Data source path/URL
+  format: string              # Required: File format (csv, json, parquet, etc.)
+  options:
+    header: boolean           # CSV specific
+    infer_schema: boolean     # Auto-detect schema
+    delimiter: string         # CSV delimiter
+    compression: string       # Compression type
+```
+
+#### Cleaning Stage
+```yaml
+type: cleaning
+name: clean-data
+config:
+  strategy: string            # Required: Strategy type
+  options:
+    remove_nulls: boolean
+    fill_values: object
+    deduplicate: boolean
+    keys: array              # Deduplication keys
+```
+
+#### Validation Stage
+```yaml
+type: validation
+name: validate-data
+config:
+  rules: array               # Required: Validation rules
+  fail_fast: boolean         # Stop on first validation error
+  output_invalid: boolean    # Include invalid records in output
+```
+
+#### Transformation Stage
+```yaml
+type: transformation
+name: transform-data
+config:
+  transformations: array     # Required: Transformation rules
+  preserve_schema: boolean   # Maintain original schema
+```
+
+#### Augmentation Stage
+```yaml
+type: augmentation
+name: augment-data
+config:
+  augmentations: array       # Required: Augmentation rules
+  ml_models: array          # ML models to use
+```
+
+### Environment Configuration
+
+```yaml
+environment:
+  compute: string           # compute tier (basic, standard, high, custom)
+  memory: string            # Memory allocation
+  timeout: integer          # Timeout in seconds
+  retries: integer          # Number of retries on failure
+  retry_delay: integer      # Delay between retries (seconds)
+```
+
+### Schedule Configuration
+
+Supports cron expressions and predefined schedules:
+
+- `* * * * *` - Every minute
+- `0 * * * *` - Every hour
+- `0 2 * * *` - Every day at 2 AM
+- `0 2 * * 1` - Every Monday at 2 AM
+- `0 2 1 * *` - First day of month at 2 AM
+
+## SDK Examples
+
+### Python
+```python
+import xether_ai
+
+client = xether_ai.Client(api_key="your-api-key")
+
+# Create pipeline
+pipeline = client.pipelines.create(
+    name="data-processing",
+    config={
+        "datasets": {
+            "input": "raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-data",
+                "config": {
+                    "source": "s3://bucket/data.csv",
+                    "format": "csv"
+                }
+            }
+        ]
+    }
+)
+
+# Trigger pipeline execution
+execution = client.pipelines.run("pipe_1234567890", parameters={
+    "date_range": {"start": "2024-01-01", "end": "2024-01-31"}
+})
+```
+
+### JavaScript
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// Create pipeline
+const pipeline = await client.pipelines.create({
+  name: 'data-processing',
+  config: {
+    datasets: {
+      input: 'raw-data',
+      output: 'processed-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-data',
+        config: {
+          source: 's3://bucket/data.csv',
+          format: 'csv'
+        }
+      }
+    ]
+  }
+});
+
+// Trigger pipeline execution
+const execution = await client.pipelines.run('pipe_1234567890', {
+  parameters: {
+    date_range: { start: '2024-01-01', end: '2024-01-31' }
+  }
+});
+```
+
+## Best Practices
+
+- **Use descriptive names** that clearly indicate the pipeline's purpose
+- **Implement proper error handling** with retry logic and notifications
+- **Monitor pipeline performance** and adjust resources accordingly
+- **Version your pipeline configurations** for reproducibility
+- **Use appropriate schedules** to avoid resource conflicts
+- **Test pipelines with small datasets** before full deployment
+- **Implement proper logging** for debugging and auditing
