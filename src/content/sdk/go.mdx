@@ -1,0 +1,1483 @@
+---
+title: Go SDK
+description: Complete guide for using the Xether AI Go SDK
+---
+
+# Go SDK
+
+The Xether AI Go SDK provides a comprehensive interface for interacting with the Xether AI platform from Go applications. This SDK enables you to manage datasets, create and run pipelines, and integrate Xether AI capabilities into your Go services and applications.
+
+## Installation
+
+### Go Modules
+
+```bash
+go get github.com/xether-ai/go-sdk
+```
+
+### Import in Your Code
+
+```go
+import "github.com/xether-ai/go-sdk"
+```
+
+## Quick Start
+
+### Basic Usage
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    // Initialize the client
+    client := xetherai.NewClient("your-api-key")
+
+    // List datasets
+    datasets, err := client.Datasets().List(context.Background())
+    if err != nil {
+        log.Fatalf("Failed to list datasets: %v", err)
+    }
+    fmt.Printf("Found %d datasets\n", len(datasets))
+
+    // Create a pipeline
+    pipeline, err := client.Pipelines().Create(context.Background(), &xetherai.PipelineConfig{
+        Name: "my-pipeline",
+        Config: map[string]interface{}{
+            "datasets": map[string]string{
+                "input":  "raw-data",
+                "output": "processed-data",
+            },
+            "stages": []map[string]interface{}{
+                {
+                    "type": "ingestion",
+                    "name": "load-data",
+                    "config": map[string]interface{}{
+                        "source": "s3://bucket/data.csv",
+                        "format": "csv",
+                    },
+                },
+            },
+        },
+    })
+    if err != nil {
+        log.Fatalf("Failed to create pipeline: %v", err)
+    }
+
+    // Run the pipeline
+    execution, err := client.Pipelines().Run(context.Background(), pipeline.ID)
+    if err != nil {
+        log.Fatalf("Failed to run pipeline: %v", err)
+    }
+    fmt.Printf("Pipeline execution started: %s\n", execution.ID)
+}
+```
+
+### With Context
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    // Create context with timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+    client := xetherai.NewClient("your-api-key")
+
+    // List datasets with context
+    datasets, err := client.Datasets().List(ctx)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Printf("Found %d datasets\n", len(datasets))
+}
+```
+
+## Authentication
+
+### API Key Authentication
+
+```go
+package main
+
+import (
+    "context"
+    "os"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    // Direct API key
+    client := xetherai.NewClient("your-api-key")
+
+    // From environment variable
+    client := xetherai.NewClient(os.Getenv("XETHER_AI_API_KEY"))
+
+    // From configuration file
+    client, err := xetherai.NewClientFromConfig("~/.xether-ai/config.json")
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+### Configuration File
+
+Create a configuration file at `~/.xether-ai/config.json`:
+
+```json
+{
+  "api_key": "your-api-key",
+  "base_url": "https://api.xether.ai",
+  "timeout": "30s",
+  "max_retries": 3,
+  "retry_delay": "1s"
+}
+```
+
+### Environment Variables
+
+```bash
+export XETHER_AI_API_KEY="your-api-key"
+export XETHER_AI_BASE_URL="https://api.xether.ai"
+export XETHER_AI_TIMEOUT="30s"
+export XETHER_AI_MAX_RETRIES="3"
+```
+
+## Client Configuration
+
+### Basic Configuration
+
+```go
+package main
+
+import (
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    client := xetherai.NewClientWithOptions(&xetherai.ClientOptions{
+        APIKey:     "your-api-key",
+        BaseURL:    "https://api.xether.ai",
+        Timeout:    30 * time.Second,
+        MaxRetries: 3,
+        RetryDelay: 1 * time.Second,
+    })
+}
+```
+
+### Advanced Configuration
+
+```go
+package main
+
+import (
+    "log"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func main() {
+    client := xetherai.NewClientWithOptions(&xetherai.ClientOptions{
+        APIKey:     "your-api-key",
+        BaseURL:    "https://api.xether.ai",
+        Timeout:    60 * time.Second,
+        MaxRetries: 5,
+        RetryDelay: 2 * time.Second,
+        ExponentialBackoff: true,
+        CustomHeaders: map[string]string{
+            "User-Agent": "MyApp/1.0",
+        },
+        Logger: &xetherai.StandardLogger{
+            InfoLogger:  log.New(os.Stdout, "INFO: ", log.LstdFlags),
+            ErrorLogger: log.New(os.Stderr, "ERROR: ", log.LstdFlags),
+            DebugLogger: log.New(os.Stdout, "DEBUG: ", log.LstdFlags),
+        },
+    })
+}
+```
+
+## Working with Datasets
+
+### List Datasets
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func listDatasets(client *xetherai.Client) error {
+    // List all datasets
+    datasets, err := client.Datasets().List(context.Background())
+    if err != nil {
+        return err
+    }
+    fmt.Printf("Found %d datasets\n", len(datasets))
+
+    // List with filters
+    datasets, err = client.Datasets().ListWithOptions(context.Background(), &xetherai.ListDatasetsOptions{
+        Tag:    "production",
+        Status: "active",
+        Limit:  50,
+        Page:   1,
+    })
+    if err != nil {
+        return err
+    }
+
+    // Iterate through datasets
+    for _, dataset := range datasets {
+        fmt.Printf("- %s (%s): %s\n", dataset.Name, dataset.ID, dataset.Description)
+    }
+
+    return nil
+}
+```
+
+### Create Dataset
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func createDataset(client *xetherai.Client) error {
+    // Basic dataset creation
+    dataset, err := client.Datasets().Create(context.Background(), &xetherai.CreateDatasetRequest{
+        Name:        "customer-data",
+        Description: "Customer information and transactions",
+        Schema: &xetherai.Schema{
+            Type: "struct",
+            Fields: []xetherai.Field{
+                {Name: "customer_id", Type: "string", Nullable: false},
+                {Name: "email", Type: "string", Nullable: false},
+                {Name: "age", Type: "integer", Nullable: true},
+            },
+        },
+        Tags: []string{"production", "pii"},
+    })
+    if err != nil {
+        return err
+    }
+
+    // Advanced dataset creation
+    dataset, err = client.Datasets().Create(context.Background(), &xetherai.CreateDatasetRequest{
+        Name:        "transaction-data",
+        Description: "Financial transaction records",
+        Schema: &xetherai.Schema{
+            Type: "struct",
+            Fields: []xetherai.Field{
+                {Name: "transaction_id", Type: "string", Nullable: false},
+                {Name: "amount", Type: "decimal", Nullable: false},
+                {Name: "timestamp", Type: "timestamp", Nullable: false},
+            },
+        },
+        Tags: []string{"financial", "production"},
+        Metadata: map[string]interface{}{
+            "source":            "transaction_system",
+            "retention_days":    2555,
+            "data_classification": "sensitive",
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Created dataset: %s\n", dataset.ID)
+    return nil
+}
+```
+
+### Get Dataset Details
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func getDataset(client *xetherai.Client) error {
+    // Get dataset by ID
+    dataset, err := client.Datasets().Get(context.Background(), "ds_1234567890")
+    if err != nil {
+        return err
+    }
+
+    // Get dataset by name
+    dataset, err = client.Datasets().GetByName(context.Background(), "customer-data")
+    if err != nil {
+        return err
+    }
+
+    // Get dataset with version information
+    dataset, err = client.Datasets().GetWithOptions(context.Background(), &xetherai.GetDatasetOptions{
+        ID:              "ds_1234567890",
+        IncludeVersions: true,
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Dataset: %s (%s)\n", dataset.Name, dataset.ID)
+    return nil
+}
+```
+
+### Update Dataset
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func updateDataset(client *xetherai.Client) error {
+    dataset, err := client.Datasets().Update(context.Background(), &xetherai.UpdateDatasetRequest{
+        ID:          "ds_1234567890",
+        Description: stringPtr("Updated description"),
+        Tags:        []string{"production", "pii", "enhanced"},
+        Metadata: map[string]interface{}{
+            "source":         "enhanced_transaction_system",
+            "retention_days": 3650,
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Updated dataset: %s\n", dataset.ID)
+    return nil
+}
+
+// Helper function for string pointers
+func stringPtr(s string) *string {
+    return &s
+}
+```
+
+### Delete Dataset
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func deleteDataset(client *xetherai.Client) error {
+    // Delete dataset with confirmation
+    err := client.Datasets().Delete(context.Background(), &xetherai.DeleteDatasetOptions{
+        ID:      "ds_1234567890",
+        Confirm: true,
+    })
+    if err != nil {
+        return err
+    }
+
+    // Force delete without confirmation
+    err = client.Datasets().Delete(context.Background(), &xetherai.DeleteDatasetOptions{
+        ID:    "ds_1234567890",
+        Force: true,
+    })
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+```
+
+### Dataset Versions
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func workWithDatasetVersions(client *xetherai.Client) error {
+    // List dataset versions
+    versions, err := client.Datasets().ListVersions(context.Background(), "ds_1234567890")
+    if err != nil {
+        return err
+    }
+
+    // Get specific version
+    version, err := client.Datasets().GetVersion(context.Background(), "ds_1234567890", 2)
+    if err != nil {
+        return err
+    }
+
+    // Compare versions
+    comparison, err := client.Datasets().CompareVersions(context.Background(), &xetherai.CompareVersionsRequest{
+        DatasetID: "ds_1234567890",
+        VersionA:  1,
+        VersionB:  2,
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Version comparison: %+v\n", comparison)
+    return nil
+}
+```
+
+## Working with Pipelines
+
+### List Pipelines
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func listPipelines(client *xetherai.Client) error {
+    // List all pipelines
+    pipelines, err := client.Pipelines().List(context.Background())
+    if err != nil {
+        return err
+    }
+
+    // List with filters
+    pipelines, err = client.Pipelines().ListWithOptions(context.Background(), &xetherai.ListPipelinesOptions{
+        Status: "active",
+        Search: "data-processing",
+        Limit:  20,
+    })
+    if err != nil {
+        return err
+    }
+
+    for _, pipeline := range pipelines {
+        fmt.Printf("- %s (%s): %s\n", pipeline.Name, pipeline.ID, pipeline.Description)
+    }
+
+    return nil
+}
+```
+
+### Create Pipeline
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func createPipeline(client *xetherai.Client) error {
+    // Simple pipeline
+    pipeline, err := client.Pipelines().Create(context.Background(), &xetherai.PipelineConfig{
+        Name:        "data-processing",
+        Description: "Process customer data",
+        Config: map[string]interface{}{
+            "datasets": map[string]string{
+                "input":  "raw-customer-data",
+                "output": "processed-customer-data",
+            },
+            "stages": []map[string]interface{}{
+                {
+                    "type": "ingestion",
+                    "name": "load-data",
+                    "config": map[string]interface{}{
+                        "source": "s3://bucket/customers.csv",
+                        "format": "csv",
+                    },
+                },
+            },
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    // Complex pipeline with multiple stages
+    pipeline, err = client.Pipelines().Create(context.Background(), &xetherai.PipelineConfig{
+        Name:        "advanced-data-processing",
+        Description: "Advanced data processing pipeline",
+        Schedule:    "0 2 * * *", // Daily at 2 AM
+        Config: map[string]interface{}{
+            "datasets": map[string]string{
+                "input":  "raw-data",
+                "output": "processed-data",
+            },
+            "stages": []map[string]interface{}{
+                {
+                    "type": "ingestion",
+                    "name": "load-data",
+                    "config": map[string]interface{}{
+                        "source":    "s3://bucket/data/",
+                        "format":    "parquet",
+                        "recursive": true,
+                    },
+                },
+                {
+                    "type": "cleaning",
+                    "name": "remove-duplicates",
+                    "config": map[string]interface{}{
+                        "strategy": "deduplicate",
+                        "keys":     []string{"customer_id"},
+                    },
+                },
+                {
+                    "type": "validation",
+                    "name": "validate-data",
+                    "config": map[string]interface{}{
+                        "rules": []map[string]interface{}{
+                            {
+                                "field":   "email",
+                                "type":    "regex",
+                                "pattern": `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
+                            },
+                        },
+                    },
+                },
+                {
+                    "type": "output",
+                    "name": "save-processed",
+                    "config": map[string]interface{}{
+                        "destination": "s3://bucket/processed/",
+                        "format":      "parquet",
+                    },
+                },
+            },
+        },
+        Environment: &xetherai.Environment{
+            Compute: "standard",
+            Memory:  "4GB",
+            Timeout: 3600,
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Created pipeline: %s\n", pipeline.ID)
+    return nil
+}
+```
+
+### Run Pipeline
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func runPipeline(client *xetherai.Client) error {
+    // Run pipeline immediately
+    execution, err := client.Pipelines().Run(context.Background(), "pipe_1234567890")
+    if err != nil {
+        return err
+    }
+
+    // Run with parameters
+    execution, err = client.Pipelines().RunWithOptions(context.Background(), &xetherai.RunPipelineOptions{
+        PipelineID: "pipe_1234567890",
+        Parameters: map[string]interface{}{
+            "date_range": map[string]string{
+                "start": "2024-01-01",
+                "end":   "2024-01-31",
+            },
+            "batch_size": 1000,
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    // Run as dry run
+    execution, err = client.Pipelines().RunWithOptions(context.Background(), &xetherai.RunPipelineOptions{
+        PipelineID: "pipe_1234567890",
+        DryRun:     true,
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Pipeline execution started: %s\n", execution.ID)
+    return nil
+}
+```
+
+### Monitor Pipeline Execution
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func monitorExecution(client *xetherai.Client) error {
+    // Get execution details
+    execution, err := client.Executions().Get(context.Background(), "exec_1234567890")
+    if err != nil {
+        return err
+    }
+
+    // Wait for completion
+    execution, err = client.Executions().WaitForCompletion(context.Background(), &xetherai.WaitForCompletionOptions{
+        ExecutionID:  "exec_1234567890",
+        Timeout:      3600 * time.Second,
+        PollInterval: 30 * time.Second,
+    })
+    if err != nil {
+        return err
+    }
+
+    // Get execution logs
+    logs, err := client.Executions().GetLogs(context.Background(), &xetherai.GetLogsOptions{
+        ExecutionID: "exec_1234567890",
+        Level:       "error",
+    })
+    if err != nil {
+        return err
+    }
+
+    // Get execution metrics
+    metrics, err := client.Executions().GetMetrics(context.Background(), "exec_1234567890")
+    if err != nil {
+        return err
+    }
+
+    // Stream logs in real-time
+    logStream, err := client.Executions().StreamLogs(context.Background(), "exec_1234567890")
+    if err != nil {
+        return err
+    }
+
+    for logEntry := range logStream {
+        fmt.Printf("[%s] %s: %s\n", logEntry.Timestamp, logEntry.Level, logEntry.Message)
+    }
+
+    return nil
+}
+```
+
+### Cancel Execution
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func cancelExecution(client *xetherai.Client) error {
+    // Cancel execution
+    err := client.Executions().Cancel(context.Background(), &xetherai.CancelExecutionOptions{
+        ExecutionID: "exec_1234567890",
+        Reason:      "Manual cancellation",
+    })
+    if err != nil {
+        return err
+    }
+
+    // Cancel with timeout
+    err = client.Executions().Cancel(context.Background(), &xetherai.CancelExecutionOptions{
+        ExecutionID:       "exec_1234567890",
+        Reason:            "Timeout exceeded",
+        WaitForCompletion: true,
+        Timeout:           300 * time.Second,
+    })
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+```
+
+## Working with ML Services
+
+### Outlier Detection
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func outlierDetection(client *xetherai.Client) error {
+    // Create pipeline with outlier detection
+    pipeline, err := client.Pipelines().Create(context.Background(), &xetherai.PipelineConfig{
+        Name: "outlier-detection",
+        Config: map[string]interface{}{
+            "datasets": map[string]string{
+                "input":  "transactions",
+                "output": "transactions-with-outliers",
+            },
+            "stages": []map[string]interface{}{
+                {
+                    "type": "augmentation",
+                    "name": "detect-outliers",
+                    "config": map[string]interface{}{
+                        "service":   "outlier_detection",
+                        "algorithm": "isolation_forest",
+                        "parameters": map[string]interface{}{
+                            "contamination":  0.05,
+                            "fields":        []string{"amount", "frequency", "duration"},
+                            "output_field":  "is_outlier",
+                            "include_scores": true,
+                        },
+                    },
+                },
+            },
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    // Run outlier detection
+    execution, err := client.Pipelines().Run(context.Background(), pipeline.ID)
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Outlier detection execution started: %s\n", execution.ID)
+    return nil
+}
+```
+
+### Synthetic Data Generation
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func syntheticDataGeneration(client *xetherai.Client) error {
+    // Generate synthetic data
+    pipeline, err := client.Pipelines().Create(context.Background(), &xetherai.PipelineConfig{
+        Name: "synthetic-data-generation",
+        Config: map[string]interface{}{
+            "datasets": map[string]string{
+                "input":  "original-data",
+                "output": "synthetic-data",
+            },
+            "stages": []map[string]interface{}{
+                {
+                    "type": "augmentation",
+                    "name": "generate-synthetic",
+                    "config": map[string]interface{}{
+                        "service": "synthetic_generation",
+                        "method":  "vae",
+                        "parameters": map[string]interface{}{
+                            "architecture": map[string]interface{}{
+                                "encoder":    []int{64, 32, 16},
+                                "latent_dim": 8,
+                                "decoder":    []int{16, 32, 64},
+                            },
+                            "epochs":        100,
+                            "fields":        []string{"age", "income", "gender"},
+                            "output_records": 1000,
+                            "preserve_privacy": true,
+                            "epsilon":        1.0,
+                        },
+                    },
+                },
+            },
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Synthetic data generation pipeline created: %s\n", pipeline.ID)
+    return nil
+}
+```
+
+### Model Versioning
+
+```go
+package main
+
+import (
+    "context"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func modelVersioning(client *xetherai.Client) error {
+    // Register a model
+    model, err := client.Models().Register(context.Background(), &xetherai.RegisterModelRequest{
+        Name:       "customer-churn-predictor",
+        ModelPath:  "s3://models/churn/model.pkl",
+        Version:    "1.0.0",
+        Framework:  "sklearn",
+        Metrics: map[string]float64{
+            "accuracy":  0.87,
+            "precision": 0.85,
+            "recall":    0.89,
+        },
+        Metadata: map[string]interface{}{
+            "training_data_version": "v2.1.0",
+            "training_date":         "2024-01-15",
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    // Deploy model
+    deployment, err := client.Models().Deploy(context.Background(), &xetherai.DeployModelRequest{
+        Name:     "customer-churn-predictor",
+        Version:  "1.0.0",
+        Strategy: "staged",
+        Stages: []xetherai.DeploymentStage{
+            {Name: "canary", Percentage: 5, DurationHours: 24},
+            {Name: "partial", Percentage: 50, DurationHours: 72},
+            {Name: "full", Percentage: 100},
+        },
+    })
+    if err != nil {
+        return err
+    }
+
+    // Monitor model performance
+    monitoring, err := client.Models().Monitor(context.Background(), &xetherai.MonitorModelRequest{
+        Name:    "customer-churn-predictor",
+        Version: "latest",
+        Metrics: []string{"accuracy", "latency", "error_rate"},
+    })
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Model deployment: %+v\n", deployment)
+    fmt.Printf("Model monitoring: %+v\n", monitoring)
+    return nil
+}
+```
+
+## Error Handling
+
+### Basic Error Handling
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/xether-ai/go-sdk"
+    "github.com/xether-ai/go-sdk/errors"
+)
+
+func handleError(client *xetherai.Client) {
+    ctx := context.Background()
+    
+    dataset, err := client.Datasets().Get(ctx, "ds_1234567890")
+    if err != nil {
+        switch e := err.(type) {
+        case *errors.NotFoundError:
+            fmt.Printf("Dataset not found: %v\n", e)
+        case *errors.AuthenticationError:
+            fmt.Printf("Authentication failed: %v\n", e)
+        case *errors.RateLimitError:
+            fmt.Printf("Rate limit exceeded: %v\n", e)
+            fmt.Printf("Retry after: %v\n", e.RetryAfter)
+        case *errors.XetherAIError:
+            fmt.Printf("Xether AI error: %v\n", e)
+        default:
+            fmt.Printf("Unexpected error: %v\n", err)
+        }
+        return
+    }
+    
+    fmt.Printf("Dataset: %s\n", dataset.Name)
+}
+```
+
+### Advanced Error Handling
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+    "github.com/xether-ai/go-sdk/errors"
+)
+
+type XetherAIService struct {
+    client *xetherai.Client
+}
+
+func NewXetherAIService(client *xetherai.Client) *XetherAIService {
+    return &XetherAIService{client: client}
+}
+
+func (s *XetherAIService) GetDatasetWithRetry(ctx context.Context, datasetID string, maxRetries int) (*xetherai.Dataset, error) {
+    var lastErr error
+    
+    for attempt := 1; attempt <= maxRetries; attempt++ {
+        dataset, err := s.client.Datasets().Get(ctx, datasetID)
+        if err == nil {
+            return dataset, nil
+        }
+        
+        lastErr = err
+        
+        switch e := err.(type) {
+        case *errors.RateLimitError:
+            delay := e.RetryAfter
+            if delay == 0 {
+                delay = time.Second
+            }
+            fmt.Printf("Rate limited, retrying in %v (attempt %d/%d)\n", delay, attempt, maxRetries)
+            time.Sleep(delay)
+        case *errors.AuthenticationError:
+            // Don't retry auth errors
+            return nil, err
+        case *errors.XetherAIError:
+            if attempt == maxRetries {
+                return nil, err
+            }
+            // Exponential backoff for other errors
+            delay := time.Duration(1<<uint(attempt)) * time.Second
+            fmt.Printf("Error occurred, retrying in %v (attempt %d/%d)\n", delay, attempt, maxRetries)
+            time.Sleep(delay)
+        default:
+            return nil, err
+        }
+    }
+    
+    return nil, lastErr
+}
+```
+
+## Logging and Monitoring
+
+### Enable Debug Logging
+
+```go
+package main
+
+import (
+    "log"
+    "os"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func setupLogging() {
+    client := xetherai.NewClientWithOptions(&xetherai.ClientOptions{
+        APIKey: "your-api-key",
+        Logger: &xetherai.StandardLogger{
+            InfoLogger:  log.New(os.Stdout, "INFO: ", log.LstdFlags),
+            ErrorLogger: log.New(os.Stderr, "ERROR: ", log.LstdFlags),
+            DebugLogger: log.New(os.Stdout, "DEBUG: ", log.LstdFlags),
+        },
+    })
+    
+    return client
+}
+```
+
+### Custom Logger
+
+```go
+package main
+
+import (
+    "log/slog"
+    "os"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+type CustomLogger struct {
+    logger *slog.Logger
+}
+
+func (l *CustomLogger) Info(msg string) {
+    l.logger.Info(msg)
+}
+
+func (l *CustomLogger) Error(msg string) {
+    l.logger.Error(msg)
+}
+
+func (l *CustomLogger) Debug(msg string) {
+    l.logger.Debug(msg)
+}
+
+func setupCustomLogger() {
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+    }))
+    
+    client := xetherai.NewClientWithOptions(&xetherai.ClientOptions{
+        APIKey: "your-api-key",
+        Logger: &CustomLogger{logger: logger},
+    })
+    
+    return client
+}
+```
+
+### Performance Monitoring
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "sync"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+type PerformanceMonitor struct {
+    client  *xetherai.Client
+    metrics map[string]*OperationMetrics
+    mu      sync.RWMutex
+}
+
+type OperationMetrics struct {
+    Count       int
+    TotalTime   time.Duration
+    MinTime     time.Duration
+    MaxTime     time.Duration
+    ErrorCount  int
+}
+
+func NewPerformanceMonitor(client *xetherai.Client) *PerformanceMonitor {
+    return &PerformanceMonitor{
+        client:  client,
+        metrics: make(map[string]*OperationMetrics),
+    }
+}
+
+func (pm *PerformanceMonitor) MeasureOperation(operation string, fn func() error) error {
+    startTime := time.Now()
+    err := fn()
+    duration := time.Since(startTime)
+    
+    pm.mu.Lock()
+    defer pm.mu.Unlock()
+    
+    metrics, exists := pm.metrics[operation]
+    if !exists {
+        metrics = &OperationMetrics{}
+        pm.metrics[operation] = metrics
+    }
+    
+    metrics.Count++
+    metrics.TotalTime += duration
+    
+    if metrics.MinTime == 0 || duration < metrics.MinTime {
+        metrics.MinTime = duration
+    }
+    if duration > metrics.MaxTime {
+        metrics.MaxTime = duration
+    }
+    
+    if err != nil {
+        metrics.ErrorCount++
+    }
+    
+    return err
+}
+
+func (pm *PerformanceMonitor) GetMetrics(operation string) *OperationMetrics {
+    pm.mu.RLock()
+    defer pm.mu.RUnlock()
+    
+    if metrics, exists := pm.metrics[operation]; exists {
+        return metrics
+    }
+    return &OperationMetrics{}
+}
+
+func (pm *PerformanceMonitor) GetAverageTime(operation string) time.Duration {
+    metrics := pm.GetMetrics(operation)
+    if metrics.Count == 0 {
+        return 0
+    }
+    return metrics.TotalTime / time.Duration(metrics.Count)
+}
+
+// Usage example
+func (pm *PerformanceMonitor) ListDatasets(ctx context.Context) ([]*xetherai.Dataset, error) {
+    var datasets []*xetherai.Dataset
+    err := pm.MeasureOperation("listDatasets", func() error {
+        var err error
+        datasets, err = pm.client.Datasets().List(ctx)
+        return err
+    })
+    
+    return datasets, err
+}
+```
+
+## Testing
+
+### Mock Client for Testing
+
+```go
+package main
+
+import (
+    "context"
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/mock"
+    "github.com/xether-ai/go-sdk"
+)
+
+// MockDatasetsService
+type MockDatasetsService struct {
+    mock.Mock
+}
+
+func (m *MockDatasetsService) List(ctx context.Context) ([]*xetherai.Dataset, error) {
+    args := m.Called(ctx)
+    return args.Get(0).([]*xetherai.Dataset), args.Error(1)
+}
+
+func (m *MockDatasetsService) Get(ctx context.Context, id string) (*xetherai.Dataset, error) {
+    args := m.Called(ctx, id)
+    return args.Get(0).(*xetherai.Dataset), args.Error(1)
+}
+
+// MockClient
+type MockClient struct {
+    mock.Mock
+}
+
+func (m *MockClient) Datasets() xetherai.DatasetsService {
+    args := m.Called()
+    return args.Get(0).(xetherai.DatasetsService)
+}
+
+func TestListDatasets(t *testing.T) {
+    // Create mock
+    mockDatasets := new(MockDatasetsService)
+    mockClient := new(MockClient)
+    
+    // Setup expectations
+    expectedDatasets := []*xetherai.Dataset{
+        {ID: "ds_test", Name: "test-dataset", Description: "Test dataset"},
+    }
+    
+    mockClient.On("Datasets").Return(mockDatasets)
+    mockDatasets.On("List", mock.Anything).Return(expectedDatasets, nil)
+    
+    // Test
+    datasetsService := mockClient.Datasets()
+    datasets, err := datasetsService.List(context.Background())
+    
+    // Assertions
+    assert.NoError(t, err)
+    assert.Len(t, datasets, 1)
+    assert.Equal(t, "test-dataset", datasets[0].Name)
+    
+    mockClient.AssertExpectations(t)
+    mockDatasets.AssertExpectations(t)
+}
+```
+
+### Integration Testing
+
+```go
+package main
+
+import (
+    "context"
+    "os"
+    "testing"
+    "time"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+    "github.com/xether-ai/go-sdk"
+)
+
+func TestCreateAndGetDataset(t *testing.T) {
+    if testing.Short() {
+        t.Skip("Skipping integration test in short mode")
+    }
+    
+    apiKey := os.Getenv("XETHER_AI_TEST_API_KEY")
+    if apiKey == "" {
+        t.Skip("XETHER_AI_TEST_API_KEY not set")
+    }
+    
+    client := xetherai.NewClientWithOptions(&xetherai.ClientOptions{
+        APIKey:  apiKey,
+        BaseURL: "https://api-test.xether.ai",
+        Timeout: 30 * time.Second,
+    })
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+    defer cancel()
+    
+    // Create dataset
+    dataset, err := client.Datasets().Create(ctx, &xetherai.CreateDatasetRequest{
+        Name:        "test-dataset",
+        Description: "Test dataset for integration testing",
+    })
+    require.NoError(t, err)
+    require.NotEmpty(t, dataset.ID)
+    
+    // Get dataset
+    retrievedDataset, err := client.Datasets().Get(ctx, dataset.ID)
+    require.NoError(t, err)
+    assert.Equal(t, dataset.ID, retrievedDataset.ID)
+    assert.Equal(t, "test-dataset", retrievedDataset.Name)
+    
+    // Cleanup
+    err = client.Datasets().Delete(ctx, &xetherai.DeleteDatasetOptions{
+        ID:    dataset.ID,
+        Force: true,
+    })
+    require.NoError(t, err)
+}
+```
+
+## Best Practices
+
+### Resource Management
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func processDatasets() error {
+    client := xetherai.NewClient("your-api-key")
+    defer client.Close() // Cleanup resources
+    
+    ctx := context.Background()
+    
+    datasets, err := client.Datasets().List(ctx)
+    if err != nil {
+        return err
+    }
+    
+    for _, dataset := range datasets {
+        err := processDataset(client, dataset.ID)
+        if err != nil {
+            fmt.Printf("Error processing dataset %s: %v\n", dataset.ID, err)
+            continue
+        }
+    }
+    
+    return nil
+}
+
+func processDataset(client *xetherai.Client, datasetID string) error {
+    ctx := context.Background()
+    dataset, err := client.Datasets().Get(ctx, datasetID)
+    if err != nil {
+        return err
+    }
+    
+    fmt.Printf("Processing dataset: %s\n", dataset.Name)
+    // Process dataset...
+    return nil
+}
+```
+
+### Configuration Management
+
+```go
+package main
+
+import (
+    "os"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func createClient() *xetherai.Client {
+    env := os.Getenv("ENVIRONMENT")
+    if env == "" {
+        env = "development"
+    }
+    
+    var options *xetherai.ClientOptions
+    
+    switch env {
+    case "production":
+        options = &xetherai.ClientOptions{
+            APIKey:     os.Getenv("XETHER_AI_PROD_API_KEY"),
+            BaseURL:    "https://api.xether.ai",
+            Timeout:    60 * time.Second,
+            MaxRetries: 5,
+        }
+    case "staging":
+        options = &xetherai.ClientOptions{
+            APIKey:     os.Getenv("XETHER_AI_STAGING_API_KEY"),
+            BaseURL:    "https://api-staging.xether.ai",
+            Timeout:    30 * time.Second,
+            MaxRetries: 3,
+        }
+    default: // development
+        options = &xetherai.ClientOptions{
+            APIKey:     os.Getenv("XETHER_AI_DEV_API_KEY"),
+            BaseURL:    "https://api-dev.xether.ai",
+            Timeout:    30 * time.Second,
+            MaxRetries: 3,
+        }
+    }
+    
+    return xetherai.NewClientWithOptions(options)
+}
+```
+
+### Batch Operations
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "sync"
+    "time"
+
+    "github.com/xether-ai/go-sdk"
+)
+
+func processMultipleDatasets(client *xetherai.Client, datasetIDs []string, batchSize, maxWorkers int) error {
+    // Create buffered channel for datasets
+    datasetChan := make(chan string, batchSize)
+    
+    // Create wait group
+    var wg sync.WaitGroup
+    
+    // Start workers
+    for i := 0; i < maxWorkers; i++ {
+        wg.Add(1)
+        go func(workerID int) {
+            defer wg.Done()
+            for datasetID := range datasetChan {
+                err := processDatasetWithRetry(client, datasetID)
+                if err != nil {
+                    fmt.Printf("Worker %d: Error processing dataset %s: %v\n", workerID, datasetID, err)
+                } else {
+                    fmt.Printf("Worker %d: Successfully processed dataset %s\n", workerID, datasetID)
+                }
+            }
+        }(i)
+    }
+    
+    // Send datasets to channel
+    for _, datasetID := range datasetIDs {
+        datasetChan <- datasetID
+    }
+    
+    // Close channel and wait for workers
+    close(datasetChan)
+    wg.Wait()
+    
+    return nil
+}
+
+func processDatasetWithRetry(client *xetherai.Client, datasetID string) error {
+    const maxRetries = 3
+    var lastErr error
+    
+    for attempt := 1; attempt <= maxRetries; attempt++ {
+        err := processDataset(client, datasetID)
+        if err == nil {
+            return nil
+        }
+        
+        lastErr = err
+        
+        if attempt < maxRetries {
+            delay := time.Duration(attempt) * time.Second
+            time.Sleep(delay)
+        }
+    }
+    
+    return lastErr
+}
+```
+
+This comprehensive Go SDK documentation provides everything needed to effectively use the Xether AI platform from Go applications, with detailed examples, error handling patterns, and best practices for production use.

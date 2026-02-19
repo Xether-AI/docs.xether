@@ -1,0 +1,952 @@
+---
+title: Python SDK
+description: Complete guide for using the Xether AI Python SDK
+---
+
+# Python SDK
+
+The Xether AI Python SDK provides a comprehensive interface for interacting with the Xether AI platform from Python applications. This SDK enables you to manage datasets, create and run pipelines, and integrate Xether AI capabilities into your Python workflows.
+
+## Installation
+
+### Basic Installation
+
+```bash
+pip install xether-ai
+```
+
+### With Optional Dependencies
+
+```bash
+# For pandas integration
+pip install xether-ai[pandas]
+
+# For async support
+pip install xether-ai[async]
+
+# For all optional features
+pip install xether-ai[all]
+```
+
+### Development Installation
+
+```bash
+git clone https://github.com/xether-ai/python-sdk.git
+cd python-sdk
+pip install -e .[dev]
+```
+
+## Quick Start
+
+### Basic Usage
+
+```python
+import xether_ai
+
+# Initialize the client
+client = xether_ai.Client(api_key="your-api-key")
+
+# List datasets
+datasets = client.datasets.list()
+print(f"Found {len(datasets)} datasets")
+
+# Create a pipeline
+pipeline = client.pipelines.create(
+    name="my-pipeline",
+    config={
+        "datasets": {
+            "input": "raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-data",
+                "config": {
+                    "source": "s3://bucket/data.csv",
+                    "format": "csv"
+                }
+            }
+        ]
+    }
+)
+
+# Run the pipeline
+execution = client.pipelines.run(pipeline.id)
+print(f"Pipeline execution started: {execution.id}")
+```
+
+### Async Usage
+
+```python
+import asyncio
+import xether_ai
+
+async def main():
+    # Initialize async client
+    client = xether_ai.AsyncClient(api_key="your-api-key")
+    
+    # List datasets asynchronously
+    datasets = await client.datasets.list()
+    print(f"Found {len(datasets)} datasets")
+    
+    # Create and run pipeline
+    pipeline = await client.pipelines.create(...)
+    execution = await client.pipelines.run(pipeline.id)
+    print(f"Pipeline execution started: {execution.id}")
+
+# Run the async function
+asyncio.run(main())
+```
+
+## Authentication
+
+### API Key Authentication
+
+```python
+import xether_ai
+
+# Direct API key
+client = xether_ai.Client(api_key="your-api-key")
+
+# From environment variable
+import os
+client = xether_ai.Client(api_key=os.getenv("XETHER_AI_API_KEY"))
+
+# From configuration file
+client = xether_ai.Client.from_config_file("~/.xether-ai/config.json")
+```
+
+### Configuration File
+
+Create a configuration file at `~/.xether-ai/config.json`:
+
+```json
+{
+  "api_key": "your-api-key",
+  "base_url": "https://api.xether.ai",
+  "timeout": 30,
+  "max_retries": 3
+}
+```
+
+### Environment Variables
+
+```bash
+export XETHER_AI_API_KEY="your-api-key"
+export XETHER_AI_BASE_URL="https://api.xether.ai"
+export XETHER_AI_TIMEOUT=30
+export XETHER_AI_MAX_RETRIES=3
+```
+
+## Client Configuration
+
+### Basic Configuration
+
+```python
+import xether_ai
+
+client = xether_ai.Client(
+    api_key="your-api-key",
+    base_url="https://api.xether.ai",
+    timeout=30,
+    max_retries=3,
+    retry_delay=1.0
+)
+```
+
+### Advanced Configuration
+
+```python
+import xether_ai
+from xether_ai.config import Config
+
+config = Config(
+    api_key="your-api-key",
+    base_url="https://api.xether.ai",
+    timeout=60,
+    max_retries=5,
+    retry_delay=2.0,
+    exponential_backoff=True,
+    log_level="DEBUG",
+    custom_headers={
+        "User-Agent": "MyApp/1.0"
+    }
+)
+
+client = xether_ai.Client(config=config)
+```
+
+## Working with Datasets
+
+### List Datasets
+
+```python
+# List all datasets
+datasets = client.datasets.list()
+
+# List with filters
+datasets = client.datasets.list(
+    tag="production",
+    status="active",
+    limit=50,
+    page=1
+)
+
+# Iterate through all datasets
+for dataset in client.datasets.list_all():
+    print(dataset.name, dataset.id)
+```
+
+### Create Dataset
+
+```python
+# Basic dataset creation
+dataset = client.datasets.create(
+    name="customer-data",
+    description="Customer information and transactions",
+    schema={
+        "type": "struct",
+        "fields": [
+            {"name": "customer_id", "type": "string", "nullable": False},
+            {"name": "email", "type": "string", "nullable": False},
+            {"name": "age", "type": "integer", "nullable": True}
+        ]
+    },
+    tags=["production", "pii"]
+)
+
+# Advanced dataset creation
+dataset = client.datasets.create(
+    name="transaction-data",
+    description="Financial transaction records",
+    schema={
+        "type": "struct",
+        "fields": [
+            {"name": "transaction_id", "type": "string", "nullable": False},
+            {"name": "amount", "type": "decimal", "nullable": False},
+            {"name": "timestamp", "type": "timestamp", "nullable": False}
+        ]
+    },
+    tags=["financial", "production"],
+    metadata={
+        "source": "transaction_system",
+        "retention_days": 2555,
+        "data_classification": "sensitive"
+    }
+)
+```
+
+### Get Dataset Details
+
+```python
+# Get dataset by ID
+dataset = client.datasets.get("ds_1234567890")
+
+# Get dataset by name
+dataset = client.datasets.get_by_name("customer-data")
+
+# Get dataset with version information
+dataset = client.datasets.get("ds_1234567890", include_versions=True)
+```
+
+### Update Dataset
+
+```python
+# Update dataset metadata
+dataset = client.datasets.update(
+    "ds_1234567890",
+    description="Updated description",
+    tags=["production", "pii", "enhanced"],
+    metadata={
+        "source": "enhanced_transaction_system",
+        "retention_days": 3650
+    }
+)
+```
+
+### Delete Dataset
+
+```python
+# Delete dataset (with confirmation)
+client.datasets.delete("ds_1234567890", confirm=True)
+
+# Force delete without confirmation
+client.datasets.delete("ds_1234567890", force=True)
+```
+
+### Dataset Versions
+
+```python
+# List dataset versions
+versions = client.datasets.list_versions("ds_1234567890")
+
+# Get specific version
+version = client.datasets.get_version("ds_1234567890", 2)
+
+# Compare versions
+comparison = client.datasets.compare_versions(
+    "ds_1234567890", 
+    version_a=1, 
+    version_b=2
+)
+```
+
+## Working with Pipelines
+
+### List Pipelines
+
+```python
+# List all pipelines
+pipelines = client.pipelines.list()
+
+# List with filters
+pipelines = client.pipelines.list(
+    status="active",
+    search="data-processing",
+    limit=20
+)
+```
+
+### Create Pipeline
+
+```python
+# Simple pipeline
+pipeline = client.pipelines.create(
+    name="data-processing",
+    description="Process customer data",
+    config={
+        "datasets": {
+            "input": "raw-customer-data",
+            "output": "processed-customer-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-data",
+                "config": {
+                    "source": "s3://bucket/customers.csv",
+                    "format": "csv"
+                }
+            }
+        ]
+    }
+)
+
+# Complex pipeline with multiple stages
+pipeline = client.pipelines.create(
+    name="advanced-data-processing",
+    description="Advanced data processing pipeline",
+    schedule="0 2 * * *",  # Daily at 2 AM
+    config={
+        "datasets": {
+            "input": "raw-data",
+            "output": "processed-data"
+        },
+        "stages": [
+            {
+                "type": "ingestion",
+                "name": "load-data",
+                "config": {
+                    "source": "s3://bucket/data/",
+                    "format": "parquet",
+                    "recursive": True
+                }
+            },
+            {
+                "type": "cleaning",
+                "name": "remove-duplicates",
+                "config": {
+                    "strategy": "deduplicate",
+                    "keys": ["customer_id"]
+                }
+            },
+            {
+                "type": "validation",
+                "name": "validate-data",
+                "config": {
+                    "rules": [
+                        {
+                            "field": "email",
+                            "type": "regex",
+                            "pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "output",
+                "name": "save-processed",
+                "config": {
+                    "destination": "s3://bucket/processed/",
+                    "format": "parquet"
+                }
+            }
+        ]
+    },
+    environment={
+        "compute": "standard",
+        "memory": "4GB",
+        "timeout": 3600
+    }
+)
+```
+
+### Run Pipeline
+
+```python
+# Run pipeline immediately
+execution = client.pipelines.run("pipe_1234567890")
+
+# Run with parameters
+execution = client.pipelines.run(
+    "pipe_1234567890",
+    parameters={
+        "date_range": {
+            "start": "2024-01-01",
+            "end": "2024-01-31"
+        },
+        "batch_size": 1000
+    }
+)
+
+# Run as dry run
+execution = client.pipelines.run(
+    "pipe_1234567890",
+    dry_run=True
+)
+```
+
+### Monitor Pipeline Execution
+
+```python
+# Get execution details
+execution = client.executions.get("exec_1234567890")
+
+# Wait for completion
+execution = client.executions.wait_for_completion(
+    "exec_1234567890",
+    timeout=3600,
+    poll_interval=30
+)
+
+# Get execution logs
+logs = client.executions.get_logs("exec_1234567890")
+
+# Get execution metrics
+metrics = client.executions.get_metrics("exec_1234567890")
+
+# Stream logs in real-time
+for log_entry in client.executions.stream_logs("exec_1234567890"):
+    print(f"[{log_entry.timestamp}] {log_entry.level}: {log_entry.message}")
+```
+
+### Cancel Execution
+
+```python
+# Cancel execution
+client.executions.cancel("exec_1234567890", reason="Manual cancellation")
+
+# Cancel with timeout
+client.executions.cancel(
+    "exec_1234567890",
+    reason="Timeout exceeded",
+    wait_for_completion=True,
+    timeout=300
+)
+```
+
+## Working with ML Services
+
+### Outlier Detection
+
+```python
+# Create pipeline with outlier detection
+pipeline = client.pipelines.create(
+    name="outlier-detection",
+    config={
+        "datasets": {
+            "input": "transactions",
+            "output": "transactions-with-outliers"
+        },
+        "stages": [
+            {
+                "type": "augmentation",
+                "name": "detect-outliers",
+                "config": {
+                    "service": "outlier_detection",
+                    "algorithm": "isolation_forest",
+                    "parameters": {
+                        "contamination": 0.05,
+                        "fields": ["amount", "frequency", "duration"],
+                        "output_field": "is_outlier",
+                        "include_scores": True
+                    }
+                }
+            }
+        ]
+    }
+)
+
+# Run outlier detection
+execution = client.pipelines.run(pipeline.id)
+```
+
+### Synthetic Data Generation
+
+```python
+# Generate synthetic data
+pipeline = client.pipelines.create(
+    name="synthetic-data-generation",
+    config={
+        "datasets": {
+            "input": "original-data",
+            "output": "synthetic-data"
+        },
+        "stages": [
+            {
+                "type": "augmentation",
+                "name": "generate-synthetic",
+                "config": {
+                    "service": "synthetic_generation",
+                    "method": "vae",
+                    "parameters": {
+                        "architecture": {
+                            "encoder": [64, 32, 16],
+                            "latent_dim": 8,
+                            "decoder": [16, 32, 64]
+                        },
+                        "epochs": 100,
+                        "fields": ["age", "income", "gender"],
+                        "output_records": 1000,
+                        "preserve_privacy": True,
+                        "epsilon": 1.0
+                    }
+                }
+            }
+        ]
+    }
+)
+```
+
+### Model Versioning
+
+```python
+# Register a model
+model = client.models.register(
+    name="customer-churn-predictor",
+    model_path="s3://models/churn/model.pkl",
+    version="1.0.0",
+    framework="sklearn",
+    metrics={
+        "accuracy": 0.87,
+        "precision": 0.85,
+        "recall": 0.89
+    },
+    metadata={
+        "training_data_version": "v2.1.0",
+        "training_date": "2024-01-15"
+    }
+)
+
+# Deploy model
+deployment = client.models.deploy(
+    name="customer-churn-predictor",
+    version="1.0.0",
+    strategy="staged",
+    stages=[
+        {"name": "canary", "percentage": 5, "duration_hours": 24},
+        {"name": "partial", "percentage": 50, "duration_hours": 72},
+        {"name": "full", "percentage": 100}
+    ]
+)
+
+# Monitor model performance
+monitoring = client.models.monitor(
+    name="customer-churn-predictor",
+    version="latest",
+    metrics=["accuracy", "latency", "error_rate"]
+)
+```
+
+## Pandas Integration
+
+### Upload DataFrame as Dataset
+
+```python
+import pandas as pd
+import xether_ai
+
+# Create a DataFrame
+df = pd.read_csv("customer_data.csv")
+
+# Upload as dataset
+dataset = client.datasets.upload_dataframe(
+    name="customer-data",
+    dataframe=df,
+    description="Customer data uploaded from DataFrame",
+    tags=["production"]
+)
+
+print(f"Created dataset: {dataset.id}")
+```
+
+### Download Dataset as DataFrame
+
+```python
+# Download dataset as DataFrame
+df = client.datasets.download_dataframe("ds_1234567890")
+
+# Download specific version
+df = client.datasets.download_dataframe("ds_1234567890", version=2)
+
+# Download with filters
+df = client.datasets.download_dataframe(
+    "ds_1234567890",
+    filters={"age": {"gt": 18}},
+    limit=10000
+)
+```
+
+### Process DataFrames with Pipelines
+
+```python
+# Process DataFrame through pipeline
+result_df = client.pipelines.process_dataframe(
+    pipeline_id="pipe_1234567890",
+    dataframe=df,
+    parameters={
+        "batch_size": 1000
+    }
+)
+
+# Process with async
+result_df = await client.pipelines.process_dataframe_async(
+    pipeline_id="pipe_1234567890",
+    dataframe=df
+)
+```
+
+## Error Handling
+
+### Basic Error Handling
+
+```python
+import xether_ai
+from xether_ai.exceptions import (
+    XetherAIError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError
+)
+
+try:
+    dataset = client.datasets.get("ds_1234567890")
+except NotFoundError as e:
+    print(f"Dataset not found: {e}")
+except AuthenticationError as e:
+    print(f"Authentication failed: {e}")
+except XetherAIError as e:
+    print(f"Xether AI error: {e}")
+```
+
+### Advanced Error Handling
+
+```python
+from xether_ai.exceptions import XetherAIError
+import logging
+
+logger = logging.getLogger(__name__)
+
+def safe_dataset_operation(dataset_id):
+    try:
+        dataset = client.datasets.get(dataset_id)
+        return dataset
+    except NotFoundError:
+        logger.error(f"Dataset {dataset_id} not found")
+        return None
+    except AuthenticationError:
+        logger.error("Authentication failed - check API key")
+        raise
+    except RateLimitError as e:
+        logger.warning(f"Rate limit exceeded: {e}")
+        time.sleep(e.retry_after)
+        return safe_dataset_operation(dataset_id)  # Retry
+    except XetherAIError as e:
+        logger.error(f"Unexpected error: {e}")
+        raise
+```
+
+### Custom Retry Logic
+
+```python
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10)
+def robust_pipeline_run(pipeline_id, parameters=None):
+    try:
+        return client.pipelines.run(pipeline_id, parameters=parameters)
+    except RateLimitError:
+        # Let tenacity handle retry
+        raise
+    except XetherAIError as e:
+        logger.error(f"Pipeline run failed: {e}")
+        raise
+```
+
+## Logging and Monitoring
+
+### Enable Debug Logging
+
+```python
+import logging
+import xether_ai
+
+# Set logging level
+logging.basicConfig(level=logging.DEBUG)
+xether_ai.logger.setLevel(logging.DEBUG)
+
+# Create client with debug logging
+client = xether_ai.Client(
+    api_key="your-api-key",
+    log_level="DEBUG"
+)
+```
+
+### Custom Logger
+
+```python
+import logging
+
+# Configure custom logger
+logger = logging.getLogger("my_app")
+handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+# Use custom logger with client
+client = xether_ai.Client(
+    api_key="your-api-key",
+    logger=logger
+)
+```
+
+### Performance Monitoring
+
+```python
+import time
+from contextlib import contextmanager
+
+@contextmanager
+def timer(operation_name):
+    start_time = time.time()
+    try:
+        yield
+    finally:
+        duration = time.time() - start_time
+        print(f"{operation_name} took {duration:.2f} seconds")
+
+# Usage
+with timer("List datasets"):
+    datasets = client.datasets.list()
+
+with timer("Create pipeline"):
+    pipeline = client.pipelines.create(...)
+```
+
+## Type Hints
+
+### Basic Type Hints
+
+```python
+from typing import List, Dict, Optional
+import xether_ai
+from xether_ai.types import Dataset, Pipeline, Execution
+
+def process_datasets(
+    client: xether_ai.Client,
+    dataset_ids: List[str]
+) -> List[Dataset]:
+    """Process multiple datasets."""
+    datasets = []
+    for dataset_id in dataset_ids:
+        dataset = client.datasets.get(dataset_id)
+        datasets.append(dataset)
+    return datasets
+
+def create_pipeline(
+    client: xether_ai.Client,
+    name: str,
+    config: Dict[str, any]
+) -> Pipeline:
+    """Create a pipeline with type hints."""
+    return client.pipelines.create(name=name, config=config)
+```
+
+### Advanced Type Hints
+
+```python
+from typing import Union, Literal, TypedDict
+from xether_ai.types import PipelineConfig, ExecutionStatus
+
+class PipelineParameters(TypedDict):
+    date_range: Dict[str, str]
+    batch_size: int
+
+def run_pipeline_with_parameters(
+    client: xether_ai.Client,
+    pipeline_id: str,
+    parameters: PipelineParameters,
+    strategy: Literal["immediate", "scheduled"] = "immediate"
+) -> Execution:
+    """Run pipeline with strongly typed parameters."""
+    return client.pipelines.run(
+        pipeline_id=pipeline_id,
+        parameters=parameters,
+        strategy=strategy
+    )
+```
+
+## Testing
+
+### Mock Client for Testing
+
+```python
+import pytest
+from unittest.mock import Mock, patch
+import xether_ai
+from xether_ai.types import Dataset
+
+@pytest.fixture
+def mock_client():
+    with patch('xether_ai.Client') as mock_client_class:
+        client = Mock(spec=xether_ai.Client)
+        mock_client_class.return_value = client
+        yield client
+
+def test_list_datasets(mock_client):
+    # Mock the response
+    mock_dataset = Dataset(
+        id="ds_test",
+        name="test-dataset",
+        description="Test dataset"
+    )
+    mock_client.datasets.list.return_value = [mock_dataset]
+    
+    # Test the function
+    datasets = mock_client.datasets.list()
+    
+    # Assertions
+    assert len(datasets) == 1
+    assert datasets[0].name == "test-dataset"
+    mock_client.datasets.list.assert_called_once()
+```
+
+### Integration Testing
+
+```python
+import pytest
+import xether_ai
+
+@pytest.fixture
+def client():
+    return xether_ai.Client(
+        api_key="test-api-key",
+        base_url="https://api-test.xether.ai"
+    )
+
+def test_create_and_get_dataset(client):
+    # Create dataset
+    dataset = client.datasets.create(
+        name="test-dataset",
+        description="Test dataset for integration testing"
+    )
+    
+    # Get dataset
+    retrieved_dataset = client.datasets.get(dataset.id)
+    
+    # Assertions
+    assert retrieved_dataset.id == dataset.id
+    assert retrieved_dataset.name == "test-dataset"
+    
+    # Cleanup
+    client.datasets.delete(dataset.id)
+```
+
+## Best Practices
+
+### Resource Management
+
+```python
+# Use context managers for resources
+with xether_ai.Client(api_key="your-api-key") as client:
+    datasets = client.datasets.list()
+    # Client automatically handles cleanup
+
+# For long-running operations, use explicit cleanup
+client = xether_ai.Client(api_key="your-api-key")
+try:
+    execution = client.pipelines.run("pipe_1234567890")
+    client.executions.wait_for_completion(execution.id)
+finally:
+    client.close()
+```
+
+### Configuration Management
+
+```python
+# Use environment-specific configuration
+import os
+from xether_ai.config import Config
+
+def create_client():
+    env = os.getenv("ENVIRONMENT", "development")
+    
+    if env == "production":
+        config = Config(
+            api_key=os.getenv("XETHER_AI_PROD_API_KEY"),
+            base_url="https://api.xether.ai",
+            timeout=60,
+            max_retries=5
+        )
+    else:
+        config = Config(
+            api_key=os.getenv("XETHER_AI_DEV_API_KEY"),
+            base_url="https://api-dev.xether.ai",
+            timeout=30,
+            max_retries=3
+        )
+    
+    return xether_ai.Client(config=config)
+```
+
+### Batch Operations
+
+```python
+# Efficient batch processing
+def process_multiple_datasets(client, dataset_ids, batch_size=10):
+    """Process datasets in batches to avoid rate limits."""
+    for i in range(0, len(dataset_ids), batch_size):
+        batch = dataset_ids[i:i + batch_size]
+        
+        for dataset_id in batch:
+            try:
+                dataset = client.datasets.get(dataset_id)
+                # Process dataset
+                yield dataset
+            except Exception as e:
+                print(f"Error processing {dataset_id}: {e}")
+        
+        # Add delay between batches
+        if i + batch_size < len(dataset_ids):
+            time.sleep(1)
+```
+
+This comprehensive Python SDK documentation provides everything needed to effectively use the Xether AI platform from Python applications, with detailed examples, best practices, and advanced usage patterns.
