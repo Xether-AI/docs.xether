@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { docsConfig } from "@/config/docs";
+import { getDocsConfig } from "@/config/docs-manager";
+import { getVersionByPath } from "@/config/versions";
 
 export function DocsSidebar() {
   const pathname = usePathname();
+  const currentVersion = getVersionByPath(pathname);
+  const docsConfig = getDocsConfig(currentVersion?.value);
 
   return (
     <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 md:sticky md:block">

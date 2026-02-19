@@ -1,24 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { ChevronDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Version {
-  label: string;
-  value: string;
-  current?: boolean;
-}
-
-const versions: Version[] = [
-  { label: "v1.0.0", value: "v1.0.0", current: true },
-  { label: "v0.9.0", value: "v0.9.0" },
-  { label: "v0.8.0", value: "v0.8.0" },
-];
+import { versions, getCurrentVersion, getVersionByPath } from "@/config/versions";
 
 export function VersionSelector() {
   const [isOpen, setIsOpen] = useState(false);
-  const currentVersion = versions.find(v => v.current) || versions[0];
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  const currentVersion = getVersionByPath(pathname) || getCurrentVersion();
 
   return (
     <div className="relative">
@@ -37,6 +30,9 @@ export function VersionSelector() {
         }}
       >
         <span className="font-medium">{currentVersion.label}</span>
+        {currentVersion.deprecated && (
+          <AlertTriangle className="h-3 w-3 text-amber-500" />
+        )}
         <ChevronDown 
           className={cn(
             "h-3 w-3 transition-transform",
@@ -55,8 +51,8 @@ export function VersionSelector() {
           
           {/* Dropdown */}
           <div className={cn(
-            "absolute top-full left-0 mt-1 min-w-[120px]",
-            "bg-background border rounded-md shadow-lg z-20",
+            "absolute top-full left-0 mt-1 min-w-[250px]",
+            "bg-background/95 backdrop-blur-sm border rounded-md shadow-lg z-20",
             "py-1"
           )} style={{ borderColor: "var(--border)" }}>
             {versions.map((version) => (
@@ -64,21 +60,35 @@ export function VersionSelector() {
                 key={version.value}
                 onClick={() => {
                   setIsOpen(false);
-                  // In a real app, this would handle version switching
-                  console.log(`Switch to version: ${version.value}`);
+                  // Handle version switching by redirecting to the same page in the new version
+                  const currentPath = pathname.replace(currentVersion.path, version.path);
+                  router.push(currentPath);
                 }}
                 className={cn(
-                  "w-full px-3 py-1.5 text-left text-sm",
-                  "hover:bg-accent/10 transition-colors",
-                  version.current && "text-primary font-medium"
+                  "w-full px-3 py-2 text-left text-sm cursor-pointer",
+                  "hover:bg-accent/10 transition-colors flex items-center justify-between",
+                  version.current && "text-primary font-medium",
+                  version.deprecated && "text-muted-foreground"
                 )}
               >
-                {version.label}
-                {version.current && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    (current)
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <span>{version.label}</span>
+                  {version.deprecated && (
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {version.current && (
+                    <span className="text-xs text-muted-foreground">
+                      (current)
+                    </span>
+                  )}
+                  {version.stable && !version.current && (
+                    <span className="text-xs text-green-600">
+                      (stable)
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>

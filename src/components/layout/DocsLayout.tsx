@@ -5,6 +5,7 @@ import { DocsSidebar } from "./DocsSidebar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { DocNavigation } from "./DocNavigation";
 import { VersionSelector } from "./VersionSelector";
+import { DeprecationNotice } from "./DeprecationNotice";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -31,6 +32,9 @@ export function DocsLayout({ children }: DocsLayoutProps) {
   return (
     <>
       <div className="container mx-auto px-4">
+        {/* Deprecation notice */}
+        <DeprecationNotice className="mb-6" />
+        
         {/* Version selector and page header */}
         <div className="flex items-center justify-between py-4 border-b mb-6" style={{ borderColor: "var(--border)" }}>
           <VersionSelector />

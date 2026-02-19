@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { docsConfig } from "@/config/docs";
 import { NavItem } from "@/config/docs";
 import { cn } from "@/lib/utils";
+import { getDocsConfig } from "@/config/docs-manager";
+import { getVersionByPath } from "@/config/versions";
 
 interface DocNavigationProps {
   className?: string;
@@ -13,6 +14,8 @@ interface DocNavigationProps {
 
 export function DocNavigation({ className }: DocNavigationProps) {
   const pathname = usePathname();
+  const currentVersion = getVersionByPath(pathname);
+  const docsConfig = getDocsConfig(currentVersion?.value);
 
   // Find current page and get next/previous
   const findNavigation = () => {
