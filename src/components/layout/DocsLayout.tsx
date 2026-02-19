@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { DocsSidebar } from "./DocsSidebar";
-import { SearchInput } from "../ui/Search";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -28,18 +27,6 @@ export function DocsLayout({ children }: DocsLayoutProps) {
 
   return (
     <>
-      {/* Docs Search Bar */}
-      <div className="border-b bg-background/50 sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4">
-          <div className="max-w-md">
-            <SearchInput 
-              className="w-full"
-              placeholder="Search documentation... (⌘K)"
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4">
         <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">
           {/* Sidebar */}

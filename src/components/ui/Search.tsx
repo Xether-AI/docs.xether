@@ -15,14 +15,19 @@ interface SearchProps {
   className?: string;
   placeholder?: string;
   autoFocus?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function SearchInput({ className, placeholder, autoFocus }: SearchProps) {
+export function SearchInput({ className, placeholder, autoFocus, isOpen, onOpenChange }: SearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Use external isOpen if provided, otherwise use internal state
+  const currentIsOpen = isOpen !== undefined ? isOpen : internalIsOpen;
+  const setCurrentIsOpen = onOpenChange || setInternalIsOpen;
 
   // Mock search data - in production, this would come from an API
   const searchData = useMemo(() => [
@@ -85,13 +90,13 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setCurrentIsOpen(false);
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        setCurrentIsOpen(false);
       }
     };
 
@@ -102,7 +107,12 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [setCurrentIsOpen]);
+
+  // Derive loading state from query instead of setting state in effect
+  const isLoading = useMemo(() => {
+    return query.trim() !== "" && results.length === 0;
+  }, [query, results]);
 
   // Derive results from query instead of setting state in effect
   const displayResults = useMemo(() => {
@@ -114,8 +124,6 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
 
   useEffect(() => {
     if (query.trim() === "") {
-      setResults([]);
-      setLoading(false);
       return;
     }
 
@@ -128,17 +136,10 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
       );
       
       setResults(filteredResults);
-      setLoading(false);
     }, 300);
-
-    // Set loading state after a small delay to avoid immediate synchronous updates
-    const loadingTimer = setTimeout(() => {
-      setLoading(true);
-    }, 50);
 
     return () => {
       clearTimeout(timer);
-      clearTimeout(loadingTimer);
     };
   }, [query, searchData]);
 
@@ -154,7 +155,7 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
   };
 
   const handleInputFocus = () => {
-    setIsOpen(true);
+    setCurrentIsOpen(true);
   };
 
   return (
@@ -162,7 +163,7 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
       {/* Search Input */}
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground"
+          className="absolute left-3 top-1/4 h-4 w-4 text-muted-foreground"
         />
         <input
           ref={inputRef}
@@ -175,11 +176,11 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
           className={cn(
             "w-full pl-10 pr-4 py-2 text-sm border rounded-lg transition-all",
             "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-            isOpen ? "border-primary" : "border-border"
+            currentIsOpen ? "border-primary" : "border-border"
           )}
           autoFocus={autoFocus}
           style={{
-            borderColor: isOpen ? "var(--primary)" : undefined,
+            borderColor: currentIsOpen ? "var(--primary)" : undefined,
             backgroundColor: "var(--background)",
             color: "var(--foreground)"
           }}
@@ -187,7 +188,7 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
         {query && (
           <button
             onClick={() => setQuery("")}
-            className="absolute right-3 top-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/4 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -195,9 +196,9 @@ export function SearchInput({ className, placeholder, autoFocus }: SearchProps) 
       </div>
 
       {/* Search Results */}
-      {isOpen && (query.trim() !== "" || displayResults.length > 0) && (
+      {currentIsOpen && (query.trim() !== "" || displayResults.length > 0) && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary/20 border-t-transparent border-r-transparent"></div>
               <span className="ml-2 text-sm text-muted-foreground">Searching...</span>

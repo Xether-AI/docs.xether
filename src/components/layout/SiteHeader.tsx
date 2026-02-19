@@ -56,6 +56,8 @@ export function SiteHeader() {
               <SearchInput 
                 className="w-64 lg:w-80"
                 placeholder="Search documentation... (⌘K)"
+                isOpen={isSearchOpen}
+                onOpenChange={setIsSearchOpen}
               />
             </div>
             
