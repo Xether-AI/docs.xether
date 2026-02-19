@@ -1,0 +1,850 @@
+---
+title: Pipeline Examples
+description: Real-world pipeline examples for common use cases
+---
+
+# Pipeline Examples
+
+This collection of real-world pipeline examples demonstrates how to solve common data processing challenges using Xether AI. Each example includes complete configuration, explanations, and best practices.
+
+## Customer Data Processing Pipeline
+
+### Use Case
+Process customer data from multiple sources, clean and validate it, then enrich with geographic information before storing in a data warehouse.
+
+### Pipeline Configuration
+
+```yaml
+name: customer-data-processing
+description: "Process customer data from multiple sources with validation and enrichment"
+schedule: "0 2 * * *"  # Daily at 2 AM
+datasets:
+  input: "raw-customer-data"
+  output: "processed-customer-data"
+environment:
+  compute: "standard"
+  memory: "4GB"
+  timeout: 3600
+stages:
+  # Stage 1: Ingest customer data from S3
+  - type: ingestion
+    name: load-customer-data
+    config:
+      source: "s3://company-data/customers/"
+      format: "csv"
+      credentials:
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+        region: "us-east-1"
+      options:
+        header: true
+        infer_schema: true
+        delimiter: ","
+        quote: "\""
+        escape: "\\"
+        null_value: ""
+        file_pattern: "customers-*.csv"
+        recursive: true
+        compression: "gzip"
+        batch_size: 10000
+
+  # Stage 2: Remove duplicate customers
+  - type: cleaning
+    name: remove-duplicate-customers
+    config:
+      strategy: "deduplicate"
+      keys: ["customer_id", "email"]
+      options:
+        keep: "first"
+        sort_by: "created_at"
+        sort_order: "desc"
+    dependencies: ["load-customer-data"]
+
+  # Stage 3: Handle missing values
+  - type: cleaning
+    name: handle-missing-values
+    config:
+      strategy: "missing_values"
+      fields:
+        email:
+          action: "drop"
+        phone:
+          action: "fill"
+          value: "N/A"
+        age:
+          action: "interpolate"
+        address:
+          action: "forward_fill"
+        created_at:
+          action: "backward_fill"
+      options:
+        default_action: "keep"
+    dependencies: ["remove-duplicate-customers"]
+
+  # Stage 4: Validate data quality
+  - type: validation
+    name: validate-customer-data
+    config:
+      strategy: "schema_validation"
+      schema:
+        type: "struct"
+        fields:
+          - name: "customer_id"
+            type: "string"
+            nullable: false
+            constraints:
+              pattern: "^[A-Z0-9]{10}$"
+          - name: "email"
+            type: "string"
+            nullable: false
+            constraints:
+              format: "email"
+          - name: "age"
+            type: "integer"
+            nullable: true
+            constraints:
+              min: 0
+              max: 120
+          - name: "created_at"
+            type: "timestamp"
+            nullable: false
+      options:
+        strict_mode: true
+        error_on_extra_fields: false
+        log_violations: true
+    dependencies: ["handle-missing-values"]
+
+  # Stage 5: Enrich with geographic data
+  - type: augmentation
+    name: enrich-with-geo-data
+    config:
+      service: "enrichment"
+      method: "geocoding"
+      parameters:
+        api_provider: "google_maps"
+        lookup_field: "postal_code"
+        output_fields: ["latitude", "longitude", "city", "state", "country"]
+        cache_results: true
+        cache_ttl: 86400
+      options:
+        batch_size: 1000
+        timeout: 30
+        retry_attempts: 3
+    dependencies: ["validate-customer-data"]
+
+  # Stage 6: Add derived fields
+  - type: transformation
+    name: add-derived-fields
+    config:
+      strategy: "field_mapping"
+      mappings:
+        age_group:
+          expression: |
+            CASE 
+              WHEN age < 18 THEN 'minor'
+              WHEN age < 30 THEN 'young_adult'
+              WHEN age < 50 THEN 'adult'
+              WHEN age < 65 THEN 'middle_aged'
+              ELSE 'senior'
+            END
+        customer_segment:
+          expression: |
+            CASE 
+              WHEN total_orders > 50 AND total_amount > 10000 THEN 'vip'
+              WHEN total_orders > 20 AND total_amount > 5000 THEN 'premium'
+              WHEN total_orders > 5 THEN 'regular'
+              ELSE 'new'
+            END
+        days_since_last_order:
+          expression: "DATEDIFF(day, last_order_date, CURRENT_DATE())"
+        is_active:
+          expression: "days_since_last_order <= 90"
+      options:
+        validate_expressions: true
+        overwrite_existing: false
+    dependencies: ["enrich-with-geo-data"]
+
+  # Stage 7: Output to data warehouse
+  - type: output
+    name: write-to-data-warehouse
+    config:
+      destination: "snowflake"
+      connection:
+        account: ${SNOWFLAKE_ACCOUNT}
+        user: ${SNOWFLAKE_USER}
+        password: ${SNOWFLAKE_PASSWORD}
+        warehouse: ${SNOWFLAKE_WAREHOUSE}
+        database: ${SNOWFLAKE_DATABASE}
+        schema: "PROCESSED"
+      table: "customers"
+      mode: "append"
+      options:
+        create_table_if_not_exists: true
+        auto_detect_schema: true
+        batch_size: 10000
+        parallel_writes: true
+        max_parallel_writers: 2
+        use_temporary_stage: true
+    dependencies: ["add-derived-fields"]
+```
+
+### Key Features Demonstrated
+
+1. **Multi-source data ingestion** from S3
+2. **Data cleaning** with duplicate removal and missing value handling
+3. **Schema validation** with comprehensive field constraints
+4. **Data enrichment** using external geocoding API
+5. **Feature engineering** with derived fields
+6. **Data warehouse output** with Snowflake integration
+7. **Error handling** and dependency management
+8. **Performance optimization** with batching and parallel processing
+
+## Financial Transaction Processing Pipeline
+
+### Use Case
+Process financial transactions, detect fraud, aggregate metrics, and store results for analysis.
+
+### Pipeline Configuration
+
+```yaml
+name: financial-transaction-processing
+description: "Process financial transactions with fraud detection and aggregation"
+schedule: "*/5 * * * *"  # Every 5 minutes
+datasets:
+  input: "raw-transactions"
+  output: "processed-transactions"
+environment:
+  compute: "high"
+  memory: "8GB"
+  timeout: 1800
+stages:
+  # Stage 1: Ingest transaction data
+  - type: ingestion
+    name: load-transactions
+    config:
+      source: "kafka"
+      format: "json"
+      connection:
+        bootstrap_servers: ["kafka:9092"]
+        topic: "transactions"
+        consumer_group: "transaction-processor"
+        auto_offset_reset: "latest"
+      options:
+        batch_size: 1000
+        max_poll_records: 5000
+        poll_timeout_ms: 1000
+        session_timeout_ms: 30000
+
+  # Stage 2: Validate transaction format
+  - type: validation
+    name: validate-transaction-format
+    config:
+      strategy: "schema_validation"
+      schema:
+        type: "struct"
+        fields:
+          - name: "transaction_id"
+            type: "string"
+            nullable: false
+          - name: "customer_id"
+            type: "string"
+            nullable: false
+          - name: "amount"
+            type: "decimal"
+            nullable: false
+            constraints:
+              min: 0.01
+              max: 999999.99
+          - name: "currency"
+            type: "string"
+            nullable: false
+            constraints:
+              values: ["USD", "EUR", "GBP", "JPY"]
+          - name: "timestamp"
+            type: "timestamp"
+            nullable: false
+          - name: "merchant_category"
+            type: "string"
+            nullable: true
+      options:
+        strict_mode: true
+        collect_violations: true
+    dependencies: ["load-transactions"]
+
+  # Stage 3: Detect fraud using ML
+  - type: augmentation
+    name: detect-fraud
+    config:
+      service: "outlier_detection"
+      algorithm: "isolation_forest"
+      parameters:
+        contamination: 0.01
+        n_estimators: 200
+        max_samples: "auto"
+        random_state: 42
+      fields: ["amount", "merchant_category", "time_of_day", "day_of_week"]
+      options:
+        output_field: "fraud_score"
+        include_scores: true
+        threshold_method: "percentile"
+        threshold_percentile: 99
+        model_path: "s3://models/fraud-detection/"
+        retrain_frequency: "daily"
+    dependencies: ["validate-transaction-format"]
+
+  # Stage 4: Apply business rules
+  - type: validation
+    name: apply-business-rules
+    config:
+      strategy: "business_rules"
+      rules:
+        - name: "reasonable_transaction_amount"
+          description: "Transaction amount should be reasonable"
+          condition: "amount > 0 AND amount <= 100000"
+          severity: "error"
+        - name: "business_hours_only"
+          description: "Large transactions only during business hours"
+          condition: "amount > 10000 OR (HOUR(timestamp) >= 9 AND HOUR(timestamp) <= 17)"
+          severity: "warning"
+        - name: "velocity_check"
+          description: "Too many transactions in short time"
+          condition: "COUNT(*) OVER (PARTITION BY customer_id ORDER BY timestamp ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) <= 5"
+          severity: "error"
+      options:
+        stop_on_first_error: false
+        collect_all_violations: true
+        violations_field: "business_rule_violations"
+    dependencies: ["detect-fraud"]
+
+  # Stage 5: Aggregate transaction metrics
+  - type: transformation
+    name: aggregate-metrics
+    config:
+      strategy: "aggregation"
+      group_by: ["customer_id", "merchant_category", "DATE_TRUNC('day', timestamp)"]
+      aggregations:
+        total_transactions:
+          function: "count"
+          field: "transaction_id"
+        total_amount:
+          function: "sum"
+          field: "amount"
+        avg_transaction_amount:
+          function: "avg"
+          field: "amount"
+        max_transaction_amount:
+          function: "max"
+          field: "amount"
+        min_transaction_amount:
+          function: "min"
+          field: "amount"
+        unique_merchants:
+          function: "count_distinct"
+          field: "merchant_id"
+        fraud_score_avg:
+          function: "avg"
+          field: "fraud_score"
+        high_fraud_count:
+          function: "sum"
+          field: "CASE WHEN fraud_score > 0.8 THEN 1 ELSE 0 END"
+      options:
+        output_nulls: false
+        include_counts: true
+    dependencies: ["apply-business-rules"]
+
+  # Stage 6: Output to analytics database
+  - type: output
+    name: write-to-analytics-db
+    config:
+      destination: "postgresql"
+      connection:
+        host: ${ANALYTICS_DB_HOST}
+        port: ${ANALYTICS_DB_PORT}
+        database: ${ANALYTICS_DB_NAME}
+        user: ${ANALYTICS_DB_USER}
+        password: ${ANALYTICS_DB_PASSWORD}
+        sslmode: "require"
+      table: "transaction_metrics"
+      mode: "append"
+      options:
+        create_table_if_not_exists: true
+        batch_size: 5000
+        parallel_writes: true
+        conflict_strategy: "ignore"
+    dependencies: ["aggregate-metrics"]
+
+  # Stage 7: Output high-risk transactions for review
+  - type: output
+    name: write-high-risk-transactions
+    config:
+      destination: "s3://fraud-alerts/"
+      format: "json"
+      condition:
+        type: "expression"
+        expression: "fraud_score > 0.8 OR business_rule_violations IS NOT NULL"
+      options:
+        file_naming: "high-risk-transactions-{timestamp}.json"
+        compression: "gzip"
+        partition_by: ["year", "month", "day"]
+    dependencies: ["apply-business-rules"]
+```
+
+### Key Features Demonstrated
+
+1. **Real-time stream processing** from Kafka
+2. **ML-based fraud detection** with isolation forest
+3. **Business rules engine** for transaction validation
+4. **Data aggregation** for analytics
+5. **Conditional output** for different data destinations
+6. **Multi-format output** (database and file storage)
+7. **Performance optimization** with parallel processing
+
+## IoT Data Processing Pipeline
+
+### Use Case
+Process IoT sensor data, detect anomalies, calculate aggregates, and store time-series data for monitoring.
+
+### Pipeline Configuration
+
+```yaml
+name: iot-data-processing
+description: "Process IoT sensor data with anomaly detection and time-series aggregation"
+schedule: "*/1 * * * *"  # Every minute
+datasets:
+  input: "iot-sensor-data"
+  output: "processed-iot-data"
+environment:
+  compute: "standard"
+  memory: "4GB"
+  timeout: 300
+stages:
+  # Stage 1: Ingest IoT sensor data
+  - type: ingestion
+    name: load-iot-data
+    config:
+      source: "mqtt"
+      format: "json"
+      connection:
+        broker: "mqtt://iot-broker:1883"
+        topic: "sensors/+/data"
+        qos: 1
+        client_id: "xether-iot-processor"
+      options:
+        batch_size: 100
+        batch_timeout_ms: 5000
+        message_retention: "latest"
+
+  # Stage 2: Parse and validate sensor data
+  - type: transformation
+    name: parse-sensor-data
+    config:
+      strategy: "field_mapping"
+      mappings:
+        sensor_id:
+          expression: "SPLIT(topic, '/')[1]"
+        sensor_type:
+          expression: "SPLIT(topic, '/')[0]"
+        timestamp:
+          expression: "CAST(timestamp AS TIMESTAMP)"
+        temperature:
+          expression: "CAST(temperature AS DOUBLE)"
+        humidity:
+          expression: "CAST(humidity AS DOUBLE)"
+        pressure:
+          expression: "CAST(pressure AS DOUBLE)"
+        battery_level:
+          expression: "CAST(battery_level AS INTEGER)"
+      options:
+        validate_expressions: true
+        error_on_failure: false
+    dependencies: ["load-iot-data"]
+
+  # Stage 3: Detect sensor anomalies
+  - type: augmentation
+    name: detect-sensor-anomalies
+    config:
+      service: "outlier_detection"
+      algorithm: "local_outlier_factor"
+      parameters:
+        n_neighbors: 20
+        contamination: 0.05
+        novelty: false
+      fields: ["temperature", "humidity", "pressure"]
+      group_by: ["sensor_id", "sensor_type"]
+      options:
+        output_field: "is_anomaly"
+        include_scores: true
+        score_field: "anomaly_score"
+        sliding_window_size: 100
+        min_samples: 20
+    dependencies: ["parse-sensor-data"]
+
+  # Stage 4: Calculate rolling averages
+  - type: transformation
+    name: calculate-rolling-averages
+    config:
+      strategy: "window_function"
+      window:
+        type: "time"
+        size: "1 hour"
+        slide: "5 minutes"
+        group_by: ["sensor_id", "sensor_type"]
+      functions:
+        avg_temperature:
+          function: "avg"
+          field: "temperature"
+        avg_humidity:
+          function: "avg"
+          field: "humidity"
+        avg_pressure:
+          function: "avg"
+          field: "pressure"
+        max_temperature:
+          function: "max"
+          field: "temperature"
+        min_temperature:
+          function: "min"
+          field: "temperature"
+      options:
+        output_nulls: false
+    dependencies: ["parse-sensor-data"]
+
+  # Stage 5: Downsample for long-term storage
+  - type: transformation
+    name: downsample-data
+    config:
+      strategy: "sampling"
+      method: "time_interval"
+      interval: "5 minutes"
+      aggregation: "avg"
+      fields: ["temperature", "humidity", "pressure"]
+      group_by: ["sensor_id", "sensor_type"]
+      options:
+        preserve_anomalies: true
+        output_timestamp: "interval_start"
+    dependencies: ["calculate-rolling-averages"]
+
+  # Stage 6: Output to time-series database
+  - type: output
+    name: write-to-timeseries-db
+    config:
+      destination: "influxdb"
+      connection:
+        host: ${INFLUXDB_HOST}
+        port: ${INFLUXDB_PORT}
+        database: ${INFLUXDB_DATABASE}
+        username: ${INFLUXDB_USERNAME}
+        password: ${INFLUXDB_PASSWORD}
+      measurement: "sensor_data"
+      mode: "append"
+      options:
+        batch_size: 1000
+        precision: "ms"
+        retention_policy: "autogen"
+        write_consistency: "any"
+    dependencies: ["downsample-data"]
+
+  # Stage 7: Output anomalies for alerting
+  - type: output
+    name: write-anomaly-alerts
+    config:
+      destination: "webhook"
+      endpoint: "https://alerts.company.com/webhook"
+      method: "POST"
+      headers:
+        "Content-Type": "application/json"
+        "Authorization": "Bearer ${ALERT_WEBHOOK_TOKEN}"
+      condition:
+        type: "expression"
+        expression: "is_anomaly = true OR battery_level < 20"
+      options:
+        batch_size: 1
+        timeout: 10
+        retry_attempts: 3
+        success_codes: [200, 201]
+    dependencies: ["detect-sensor-anomalies"]
+```
+
+### Key Features Demonstrated
+
+1. **IoT protocol support** (MQTT)
+2. **Real-time anomaly detection** with LOF algorithm
+3. **Time-series processing** with window functions
+4. **Data downsampling** for efficient storage
+5. **Time-series database** integration (InfluxDB)
+6. **Real-time alerting** with webhook output
+7. **Conditional processing** based on anomaly detection
+
+## E-commerce Order Processing Pipeline
+
+### Use Case
+Process e-commerce orders, join with customer data, calculate metrics, and update inventory systems.
+
+### Pipeline Configuration
+
+```yaml
+name: ecommerce-order-processing
+description: "Process e-commerce orders with customer enrichment and inventory updates"
+schedule: "*/2 * * * *"  # Every 2 minutes
+datasets:
+  input: "raw-orders"
+  output: "processed-orders"
+environment:
+  compute: "standard"
+  memory: "4GB"
+  timeout: 600
+stages:
+  # Stage 1: Ingest order data
+  - type: ingestion
+    name: load-orders
+    config:
+      source: "postgresql"
+      connection:
+        host: ${ORDER_DB_HOST}
+        port: ${ORDER_DB_PORT}
+        database: ${ORDER_DB_NAME}
+        user: ${ORDER_DB_USER}
+        password: ${ORDER_DB_PASSWORD}
+      query: |
+        SELECT 
+          order_id,
+          customer_id,
+          order_date,
+          total_amount,
+          status,
+          shipping_address,
+          billing_address,
+          created_at,
+          updated_at
+        FROM orders
+        WHERE status IN ('pending', 'processing')
+          AND updated_at >= NOW() - INTERVAL '1 hour'
+      options:
+        batch_size: 1000
+        parallel_reads: true
+        max_parallel_readers: 2
+
+  # Stage 2: Join with customer data
+  - type: transformation
+    name: join-customer-data
+    config:
+      strategy: "join"
+      left_source: "orders"
+      right_source: "customers"
+      join_type: "left"
+      join_keys: ["customer_id"]
+      right_prefix: "customer_"
+      options:
+        right_fields: ["name", "email", "segment", "registration_date"]
+        handle_nulls: "keep"
+        validate_keys: true
+    dependencies: ["load-orders"]
+
+  # Stage 3: Calculate order metrics
+  - type: transformation
+    name: calculate-order-metrics
+    config:
+      strategy: "field_mapping"
+      mappings:
+        order_day_of_week:
+          expression: "DAYOFWEEK(order_date)"
+        order_month:
+          expression: "MONTH(order_date)"
+        order_year:
+          expression: "YEAR(order_date)"
+        is_weekend_order:
+          expression: "DAYOFWEEK(order_date) IN (1, 7)"
+        order_value_tier:
+          expression: |
+            CASE 
+              WHEN total_amount < 50 THEN 'low'
+              WHEN total_amount < 200 THEN 'medium'
+              WHEN total_amount < 500 THEN 'high'
+              ELSE 'premium'
+            END
+        days_since_customer_registration:
+          expression: "DATEDIFF(day, customer_registration_date, order_date)"
+        customer_lifetime_value:
+          expression: "customer_total_orders * 50"  # Simplified calculation
+      options:
+        validate_expressions: true
+    dependencies: ["join-customer-data"]
+
+  # Stage 4: Detect order anomalies
+  - type: augmentation
+    name: detect-order-anomalies
+    config:
+      service: "outlier_detection"
+      algorithm: "zscore"
+      parameters:
+        threshold: 3.0
+      fields: ["total_amount"]
+      group_by: ["customer_id"]
+      options:
+        output_field: "is_amount_anomaly"
+        include_scores: true
+        score_field: "amount_zscore"
+        min_group_size: 3
+    dependencies: ["calculate-order-metrics"]
+
+  # Stage 5: Update inventory
+  - type: output
+    name: update-inventory
+    config:
+      destination: "api"
+      endpoint: "https://inventory.company.com/api/update"
+      method: "POST"
+      headers:
+        "Content-Type": "application/json"
+        "Authorization": "Bearer ${INVENTORY_API_TOKEN}"
+      body:
+        template: |
+          {
+            "order_id": "{{order_id}}",
+            "items": [
+              {
+                "product_id": "{{product_id}}",
+                "quantity_change": -{{quantity}},
+                "reason": "order_fulfillment"
+              }
+            ]
+          }
+      options:
+        batch_size: 10
+        timeout: 30
+        retry_attempts: 3
+        success_codes: [200, 201]
+      condition:
+        type: "expression"
+        expression: "status = 'confirmed'"
+    dependencies: ["detect-order-anomalies"]
+
+  # Stage 6: Output to analytics
+  - type: output
+    name: write-to-analytics
+    config:
+      destination: "redshift"
+      connection:
+        host: ${REDSHIFT_HOST}
+        port: ${REDSHIFT_PORT}
+        database: ${REDSHIFT_DATABASE}
+        user: ${REDSHIFT_USER}
+        password: ${REDSHIFT_PASSWORD}
+      table: "order_analytics"
+      mode: "append"
+      options:
+        create_table_if_not_exists: true
+        auto_detect_schema: true
+        batch_size: 2000
+        parallel_writes: true
+        use_temporary_table: true
+        distribution_key: "customer_id"
+    dependencies: ["calculate-order-metrics"]
+
+  # Stage 7: Send notifications for anomalies
+  - type: output
+    name: send-anomaly-notifications
+    config:
+      destination: "email"
+      smtp:
+        host: ${SMTP_HOST}
+        port: ${SMTP_PORT}
+        username: ${SMTP_USERNAME}
+        password: ${SMTP_PASSWORD}
+        from: "noreply@company.com"
+      to: ["fraud@company.com"]
+      subject: "Order Anomaly Alert"
+      body:
+        template: |
+          Anomaly detected in order {{order_id}}
+          
+          Customer: {{customer_name}} ({{customer_email}})
+          Amount: ${{total_amount}} (Z-score: {{amount_zscore}})
+          Order Date: {{order_date}}
+          
+          Please review this order for potential fraud.
+      condition:
+        type: "expression"
+        expression: "is_amount_anomaly = true AND total_amount > 1000"
+      options:
+        include_html: true
+        priority: "high"
+    dependencies: ["detect-order-anomalies"]
+```
+
+### Key Features Demonstrated
+
+1. **Database ingestion** with incremental loading
+2. **Data joining** between orders and customers
+3. **Feature engineering** with business metrics
+4. **Anomaly detection** for fraud prevention
+5. **API integration** for inventory updates
+6. **Data warehouse output** to Redshift
+7. **Multi-channel notifications** (email, webhook)
+8. **Conditional processing** based on business rules
+
+## Best Practices
+
+### Error Handling
+
+```yaml
+stages:
+  - type: ingestion
+    name: load-data
+    config: {...}
+    error_handling:
+      strategy: "retry"
+      max_attempts: 3
+      retry_delay: 30
+      exponential_backoff: true
+      on_failure: "log_error"
+      alert_on_failure: true
+```
+
+### Performance Optimization
+
+```yaml
+stages:
+  - type: transformation
+    name: process-data
+    config: {...}
+    performance:
+      parallel_processing: true
+      max_workers: 4
+      batch_size: 10000
+      memory_limit: "2GB"
+      cache_intermediate_results: true
+```
+
+### Monitoring and Logging
+
+```yaml
+stages:
+  - type: validation
+    name: validate-data
+    config: {...}
+    monitoring:
+      log_performance: true
+      collect_metrics: true
+      track_data_quality: true
+      send_alerts: true
+```
+
+### Security Considerations
+
+```yaml
+stages:
+  - type: output
+    name: write-sensitive-data
+    config:
+      destination: "s3://secure-bucket/"
+      credentials:
+        access_key_id: ${AWS_ACCESS_KEY_ID}
+        secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+      options:
+        encryption: "AES256"
+        server_side_encryption: true
+        bucket_policy: "private"
+```
+
+These examples demonstrate comprehensive pipeline configurations for real-world scenarios, showcasing the flexibility and power of Xether AI's pipeline system.

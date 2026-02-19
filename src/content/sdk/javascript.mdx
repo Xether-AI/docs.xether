@@ -1,0 +1,1067 @@
+---
+title: JavaScript SDK
+description: Complete guide for using the Xether AI JavaScript/TypeScript SDK
+---
+
+# JavaScript SDK
+
+The Xether AI JavaScript SDK provides a comprehensive interface for interacting with the Xether AI platform from JavaScript and TypeScript applications. This SDK enables you to manage datasets, create and run pipelines, and integrate Xether AI capabilities into your web applications, Node.js services, and browser-based tools.
+
+## Installation
+
+### npm Installation
+
+```bash
+npm install @xether-ai/sdk
+```
+
+### yarn Installation
+
+```bash
+yarn add @xether-ai/sdk
+```
+
+### pnpm Installation
+
+```bash
+pnpm add @xether-ai/sdk
+```
+
+### CDN Installation
+
+```html
+<!-- For browser usage -->
+<script src="https://cdn.jsdelivr.net/npm/@xether-ai/sdk/dist/xether-ai.min.js"></script>
+```
+
+## Quick Start
+
+### Basic Usage (Node.js)
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+// Initialize the client
+const client = new XetherAI({ apiKey: 'your-api-key' });
+
+// List datasets
+async function listDatasets() {
+  try {
+    const datasets = await client.datasets.list();
+    console.log(`Found ${datasets.length} datasets`);
+    return datasets;
+  } catch (error) {
+    console.error('Error listing datasets:', error);
+  }
+}
+
+// Create a pipeline
+async function createPipeline() {
+  try {
+    const pipeline = await client.pipelines.create({
+      name: 'my-pipeline',
+      config: {
+        datasets: {
+          input: 'raw-data',
+          output: 'processed-data'
+        },
+        stages: [
+          {
+            type: 'ingestion',
+            name: 'load-data',
+            config: {
+              source: 's3://bucket/data.csv',
+              format: 'csv'
+            }
+          }
+        ]
+      }
+    });
+    
+    console.log('Pipeline created:', pipeline.id);
+    return pipeline;
+  } catch (error) {
+    console.error('Error creating pipeline:', error);
+  }
+}
+```
+
+### Basic Usage (Browser)
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Xether AI SDK Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/@xether-ai/sdk/dist/xether-ai.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>Xether AI SDK Demo</h1>
+        <button onclick="listDatasets()">List Datasets</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Initialize client
+        const client = new XetherAI({ 
+            apiKey: 'your-api-key' 
+        });
+
+        async function listDatasets() {
+            try {
+                const datasets = await client.datasets.list();
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `<h2>Found ${datasets.length} datasets:</h2>`;
+                
+                datasets.forEach(dataset => {
+                    resultsDiv.innerHTML += `<p>${dataset.name} (${dataset.id})</p>`;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = 
+                    `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+### TypeScript Usage
+
+```typescript
+import { XetherAI, Dataset, Pipeline, Execution } from '@xether-ai/sdk';
+
+// Initialize with TypeScript types
+const client: XetherAI = new XetherAI({ 
+  apiKey: 'your-api-key' 
+});
+
+// Type-safe operations
+async function getDataset(datasetId: string): Promise<Dataset> {
+  const dataset = await client.datasets.get(datasetId);
+  return dataset;
+}
+
+async function createPipeline(config: PipelineConfig): Promise<Pipeline> {
+  const pipeline = await client.pipelines.create({
+    name: 'typed-pipeline',
+    config
+  });
+  return pipeline;
+}
+```
+
+## Authentication
+
+### API Key Authentication
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+// Direct API key
+const client = new XetherAI({ 
+  apiKey: 'your-api-key' 
+});
+
+// From environment variable (Node.js)
+const client = new XetherAI({ 
+  apiKey: process.env.XETHER_AI_API_KEY 
+});
+
+// From configuration file
+const client = XetherAI.fromConfigFile('./config.json');
+```
+
+### Configuration File
+
+Create a configuration file:
+
+```json
+{
+  "apiKey": "your-api-key",
+  "baseUrl": "https://api.xether.ai",
+  "timeout": 30000,
+  "maxRetries": 3,
+  "retryDelay": 1000
+}
+```
+
+### Environment Variables
+
+```bash
+# .env file
+XETHER_AI_API_KEY=your-api-key
+XETHER_AI_BASE_URL=https://api.xether.ai
+XETHER_AI_TIMEOUT=30000
+XETHER_AI_MAX_RETRIES=3
+```
+
+```javascript
+// Using dotenv
+import dotenv from 'dotenv';
+dotenv.config();
+
+const client = new XetherAI({ 
+  apiKey: process.env.XETHER_AI_API_KEY 
+});
+```
+
+## Client Configuration
+
+### Basic Configuration
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({
+  apiKey: 'your-api-key',
+  baseUrl: 'https://api.xether.ai',
+  timeout: 30000,
+  maxRetries: 3,
+  retryDelay: 1000
+});
+```
+
+### Advanced Configuration
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+const client = new XetherAI({
+  apiKey: 'your-api-key',
+  baseUrl: 'https://api.xether.ai',
+  timeout: 60000,
+  maxRetries: 5,
+  retryDelay: 2000,
+  exponentialBackoff: true,
+  headers: {
+    'User-Agent': 'MyApp/1.0',
+    'X-Custom-Header': 'custom-value'
+  },
+  // Custom fetch implementation (Node.js)
+  fetch: require('node-fetch'),
+  // Logging configuration
+  logLevel: 'debug',
+  logger: {
+    info: (msg) => console.log(`[INFO] ${msg}`),
+    warn: (msg) => console.warn(`[WARN] ${msg}`),
+    error: (msg) => console.error(`[ERROR] ${msg}`)
+  }
+});
+```
+
+## Working with Datasets
+
+### List Datasets
+
+```javascript
+// List all datasets
+const datasets = await client.datasets.list();
+
+// List with filters
+const datasets = await client.datasets.list({
+  tag: 'production',
+  status: 'active',
+  limit: 50,
+  page: 1
+});
+
+// List with search
+const datasets = await client.datasets.list({
+  search: 'customer',
+  sort: 'created_at',
+  order: 'desc'
+});
+
+// Iterate through all datasets (auto-pagination)
+for await (const dataset of client.datasets.listAll()) {
+  console.log(dataset.name, dataset.id);
+}
+```
+
+### Create Dataset
+
+```javascript
+// Basic dataset creation
+const dataset = await client.datasets.create({
+  name: 'customer-data',
+  description: 'Customer information and transactions',
+  schema: {
+    type: 'struct',
+    fields: [
+      { name: 'customer_id', type: 'string', nullable: false },
+      { name: 'email', type: 'string', nullable: false },
+      { name: 'age', type: 'integer', nullable: true }
+    ]
+  },
+  tags: ['production', 'pii']
+});
+
+// Advanced dataset creation
+const dataset = await client.datasets.create({
+  name: 'transaction-data',
+  description: 'Financial transaction records',
+  schema: {
+    type: 'struct',
+    fields: [
+      { name: 'transaction_id', type: 'string', nullable: false },
+      { name: 'amount', type: 'decimal', nullable: false },
+      { name: 'timestamp', type: 'timestamp', nullable: false }
+    ]
+  },
+  tags: ['financial', 'production'],
+  metadata: {
+    source: 'transaction_system',
+    retention_days: 2555,
+    data_classification: 'sensitive'
+  }
+});
+```
+
+### Get Dataset Details
+
+```javascript
+// Get dataset by ID
+const dataset = await client.datasets.get('ds_1234567890');
+
+// Get dataset by name
+const dataset = await client.datasets.getByName('customer-data');
+
+// Get dataset with version information
+const dataset = await client.datasets.get('ds_1234567890', {
+  includeVersions: true
+});
+```
+
+### Update Dataset
+
+```javascript
+// Update dataset metadata
+const dataset = await client.datasets.update('ds_1234567890', {
+  description: 'Updated description',
+  tags: ['production', 'pii', 'enhanced'],
+  metadata: {
+    source: 'enhanced_transaction_system',
+    retention_days: 3650
+  }
+});
+```
+
+### Delete Dataset
+
+```javascript
+// Delete dataset (with confirmation)
+await client.datasets.delete('ds_1234567890', { confirm: true });
+
+// Force delete without confirmation
+await client.datasets.delete('ds_1234567890', { force: true });
+```
+
+### Dataset Versions
+
+```javascript
+// List dataset versions
+const versions = await client.datasets.listVersions('ds_1234567890');
+
+// Get specific version
+const version = await client.datasets.getVersion('ds_1234567890', 2);
+
+// Compare versions
+const comparison = await client.datasets.compareVersions(
+  'ds_1234567890', 
+  { versionA: 1, versionB: 2 }
+);
+```
+
+## Working with Pipelines
+
+### List Pipelines
+
+```javascript
+// List all pipelines
+const pipelines = await client.pipelines.list();
+
+// List with filters
+const pipelines = await client.pipelines.list({
+  status: 'active',
+  search: 'data-processing',
+  limit: 20
+});
+```
+
+### Create Pipeline
+
+```javascript
+// Simple pipeline
+const pipeline = await client.pipelines.create({
+  name: 'data-processing',
+  description: 'Process customer data',
+  config: {
+    datasets: {
+      input: 'raw-customer-data',
+      output: 'processed-customer-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-data',
+        config: {
+          source: 's3://bucket/customers.csv',
+          format: 'csv'
+        }
+      }
+    ]
+  }
+});
+
+// Complex pipeline with multiple stages
+const pipeline = await client.pipelines.create({
+  name: 'advanced-data-processing',
+  description: 'Advanced data processing pipeline',
+  schedule: '0 2 * * *', // Daily at 2 AM
+  config: {
+    datasets: {
+      input: 'raw-data',
+      output: 'processed-data'
+    },
+    stages: [
+      {
+        type: 'ingestion',
+        name: 'load-data',
+        config: {
+          source: 's3://bucket/data/',
+          format: 'parquet',
+          recursive: true
+        }
+      },
+      {
+        type: 'cleaning',
+        name: 'remove-duplicates',
+        config: {
+          strategy: 'deduplicate',
+          keys: ['customer_id']
+        }
+      },
+      {
+        type: 'validation',
+        name: 'validate-data',
+        config: {
+          rules: [
+            {
+              field: 'email',
+              type: 'regex',
+              pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+            }
+          ]
+        }
+      },
+      {
+        type: 'output',
+        name: 'save-processed',
+        config: {
+          destination: 's3://bucket/processed/',
+          format: 'parquet'
+        }
+      }
+    ]
+  },
+  environment: {
+    compute: 'standard',
+    memory: '4GB',
+    timeout: 3600
+  }
+});
+```
+
+### Run Pipeline
+
+```javascript
+// Run pipeline immediately
+const execution = await client.pipelines.run('pipe_1234567890');
+
+// Run with parameters
+const execution = await client.pipelines.run('pipe_1234567890', {
+  parameters: {
+    date_range: {
+      start: '2024-01-01',
+      end: '2024-01-31'
+    },
+    batch_size: 1000
+  }
+});
+
+// Run as dry run
+const execution = await client.pipelines.run('pipe_1234567890', {
+  dryRun: true
+});
+```
+
+### Monitor Pipeline Execution
+
+```javascript
+// Get execution details
+const execution = await client.executions.get('exec_1234567890');
+
+// Wait for completion
+const execution = await client.executions.waitForCompletion(
+  'exec_1234567890',
+  {
+    timeout: 3600000, // 1 hour in milliseconds
+    pollInterval: 30000 // 30 seconds
+  }
+);
+
+// Get execution logs
+const logs = await client.executions.getLogs('exec_1234567890');
+
+// Get execution metrics
+const metrics = await client.executions.getMetrics('exec_1234567890');
+
+// Stream logs in real-time
+const logStream = client.executions.streamLogs('exec_1234567890');
+for await (const logEntry of logStream) {
+  console.log(`[${logEntry.timestamp}] ${logEntry.level}: ${logEntry.message}`);
+}
+```
+
+### Cancel Execution
+
+```javascript
+// Cancel execution
+await client.executions.cancel('exec_1234567890', {
+  reason: 'Manual cancellation'
+});
+
+// Cancel with timeout
+await client.executions.cancel('exec_1234567890', {
+  reason: 'Timeout exceeded',
+  waitForCompletion: true,
+  timeout: 300000 // 5 minutes
+});
+```
+
+## Working with ML Services
+
+### Outlier Detection
+
+```javascript
+// Create pipeline with outlier detection
+const pipeline = await client.pipelines.create({
+  name: 'outlier-detection',
+  config: {
+    datasets: {
+      input: 'transactions',
+      output: 'transactions-with-outliers'
+    },
+    stages: [
+      {
+        type: 'augmentation',
+        name: 'detect-outliers',
+        config: {
+          service: 'outlier_detection',
+          algorithm: 'isolation_forest',
+          parameters: {
+            contamination: 0.05,
+            fields: ['amount', 'frequency', 'duration'],
+            outputField: 'is_outlier',
+            includeScores: true
+          }
+        }
+      }
+    ]
+  }
+});
+
+// Run outlier detection
+const execution = await client.pipelines.run(pipeline.id);
+```
+
+### Synthetic Data Generation
+
+```javascript
+// Generate synthetic data
+const pipeline = await client.pipelines.create({
+  name: 'synthetic-data-generation',
+  config: {
+    datasets: {
+      input: 'original-data',
+      output: 'synthetic-data'
+    },
+    stages: [
+      {
+        type: 'augmentation',
+        name: 'generate-synthetic',
+        config: {
+          service: 'synthetic_generation',
+          method: 'vae',
+          parameters: {
+            architecture: {
+              encoder: [64, 32, 16],
+              latentDim: 8,
+              decoder: [16, 32, 64]
+            },
+            epochs: 100,
+            fields: ['age', 'income', 'gender'],
+            outputRecords: 1000,
+            preservePrivacy: true,
+            epsilon: 1.0
+          }
+        }
+      }
+    ]
+  }
+});
+```
+
+### Model Versioning
+
+```javascript
+// Register a model
+const model = await client.models.register({
+  name: 'customer-churn-predictor',
+  modelPath: 's3://models/churn/model.pkl',
+  version: '1.0.0',
+  framework: 'sklearn',
+  metrics: {
+    accuracy: 0.87,
+    precision: 0.85,
+    recall: 0.89
+  },
+  metadata: {
+    trainingDataVersion: 'v2.1.0',
+    trainingDate: '2024-01-15'
+  }
+});
+
+// Deploy model
+const deployment = await client.models.deploy({
+  name: 'customer-churn-predictor',
+  version: '1.0.0',
+  strategy: 'staged',
+  stages: [
+    { name: 'canary', percentage: 5, durationHours: 24 },
+    { name: 'partial', percentage: 50, durationHours: 72 },
+    { name: 'full', percentage: 100 }
+  ]
+});
+
+// Monitor model performance
+const monitoring = await client.models.monitor({
+  name: 'customer-churn-predictor',
+  version: 'latest',
+  metrics: ['accuracy', 'latency', 'errorRate']
+});
+```
+
+## React Integration
+
+### React Hook
+
+```typescript
+// hooks/useXetherAI.ts
+import { useState, useEffect } from 'react';
+import { XetherAI, Dataset } from '@xether-ai/sdk';
+
+export function useXetherAI(apiKey: string) {
+  const [client] = useState(() => new XetherAI({ apiKey }));
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDatasets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await client.datasets.list();
+      setDatasets(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDatasets();
+  }, []);
+
+  return {
+    client,
+    datasets,
+    loading,
+    error,
+    loadDatasets
+  };
+}
+```
+
+### React Component
+
+```tsx
+// components/DatasetList.tsx
+import React from 'react';
+import { useXetherAI } from '../hooks/useXetherAI';
+
+export function DatasetList({ apiKey }: { apiKey: string }) {
+  const { client, datasets, loading, error, loadDatasets } = useXetherAI(apiKey);
+
+  const handleCreateDataset = async () => {
+    try {
+      await client.datasets.create({
+        name: 'new-dataset',
+        description: 'Created from React app'
+      });
+      loadDatasets(); // Refresh list
+    } catch (err) {
+      console.error('Error creating dataset:', err);
+    }
+  };
+
+  if (loading) return <div>Loading datasets...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <h2>Datasets ({datasets.length})</h2>
+      <button onClick={handleCreateDataset}>
+        Create Dataset
+      </button>
+      <ul>
+        {datasets.map(dataset => (
+          <li key={dataset.id}>
+            {dataset.name} - {dataset.description}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Error Handling
+
+### Basic Error Handling
+
+```javascript
+import { XetherAI, 
+         XetherAIError, 
+         AuthenticationError, 
+         NotFoundError, 
+         ValidationError, 
+         RateLimitError } from '@xether-ai/sdk';
+
+try {
+  const dataset = await client.datasets.get('ds_1234567890');
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.log('Dataset not found:', error.message);
+  } else if (error instanceof AuthenticationError) {
+    console.log('Authentication failed:', error.message);
+  } else if (error instanceof RateLimitError) {
+    console.log('Rate limit exceeded:', error.message);
+    console.log('Retry after:', error.retryAfter);
+  } else if (error instanceof XetherAIError) {
+    console.log('Xether AI error:', error.message);
+  } else {
+    console.log('Unexpected error:', error);
+  }
+}
+```
+
+### Advanced Error Handling
+
+```javascript
+class XetherAIService {
+  constructor(client) {
+    this.client = client;
+  }
+
+  async getDatasetWithRetry(datasetId, maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.client.datasets.get(datasetId);
+      } catch (error) {
+        lastError = error;
+        
+        if (error instanceof RateLimitError) {
+          const delay = error.retryAfter || 1000;
+          console.log(`Rate limited, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else if (error instanceof AuthenticationError) {
+          throw error; // Don't retry auth errors
+        } else if (attempt === maxRetries) {
+          throw error;
+        } else {
+          // Exponential backoff for other errors
+          const delay = Math.pow(2, attempt) * 1000;
+          console.log(`Error occurred, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+}
+```
+
+## Logging and Monitoring
+
+### Enable Debug Logging
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+// Create client with debug logging
+const client = new XetherAI({
+  apiKey: 'your-api-key',
+  logLevel: 'debug',
+  logger: {
+    info: (msg) => console.log(`[INFO] ${msg}`),
+    warn: (msg) => console.warn(`[WARN] ${msg}`),
+    error: (msg) => console.error(`[ERROR] ${msg}`),
+    debug: (msg) => console.debug(`[DEBUG] ${msg}`)
+  }
+});
+```
+
+### Custom Logger
+
+```javascript
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'xether-ai.log' })
+  ]
+});
+
+const client = new XetherAI({
+  apiKey: 'your-api-key',
+  logger: {
+    info: (msg) => logger.info(msg),
+    warn: (msg) => logger.warn(msg),
+    error: (msg) => logger.error(msg),
+    debug: (msg) => logger.debug(msg)
+  }
+});
+```
+
+### Performance Monitoring
+
+```javascript
+class PerformanceMonitor {
+  constructor(client) {
+    this.client = client;
+    this.metrics = new Map();
+  }
+
+  async measureOperation(operationName, operation) {
+    const startTime = Date.now();
+    try {
+      const result = await operation();
+      const duration = Date.now() - startTime;
+      this.recordMetric(operationName, duration, 'success');
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.recordMetric(operationName, duration, 'error');
+      throw error;
+    }
+  }
+
+  recordMetric(operation, duration, status) {
+    if (!this.metrics.has(operation)) {
+      this.metrics.set(operation, []);
+    }
+    this.metrics.get(operation).push({ duration, status, timestamp: Date.now() });
+  }
+
+  getMetrics(operation) {
+    const operationMetrics = this.metrics.get(operation) || [];
+    const durations = operationMetrics.map(m => m.duration);
+    
+    return {
+      count: durations.length,
+      average: durations.reduce((a, b) => a + b, 0) / durations.length,
+      min: Math.min(...durations),
+      max: Math.max(...durations),
+      successRate: operationMetrics.filter(m => m.status === 'success').length / operationMetrics.length
+    };
+  }
+}
+
+// Usage
+const monitor = new PerformanceMonitor(client);
+const datasets = await monitor.measureOperation('listDatasets', () => 
+  client.datasets.list()
+);
+console.log(monitor.getMetrics('listDatasets'));
+```
+
+## Testing
+
+### Mock Client for Testing
+
+```javascript
+import { jest } from '@jest/globals';
+import { XetherAI } from '@xether-ai/sdk';
+
+describe('XetherAI Client', () => {
+  let mockClient;
+  let mockDatasets;
+
+  beforeEach(() => {
+    mockDatasets = {
+      list: jest.fn(),
+      get: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn()
+    };
+
+    mockClient = {
+      datasets: mockDatasets
+    };
+  });
+
+  test('should list datasets', async () => {
+    const mockDataset = {
+      id: 'ds_test',
+      name: 'test-dataset',
+      description: 'Test dataset'
+    };
+    
+    mockDatasets.list.mockResolvedValue([mockDataset]);
+    
+    const datasets = await mockClient.datasets.list();
+    
+    expect(datasets).toHaveLength(1);
+    expect(datasets[0].name).toBe('test-dataset');
+    expect(mockDatasets.list).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### Integration Testing
+
+```javascript
+import { XetherAI } from '@xether-ai/sdk';
+
+describe('XetherAI Integration Tests', () => {
+  let client;
+
+  beforeAll(() => {
+    client = new XetherAI({
+      apiKey: process.env.XETHER_AI_TEST_API_KEY,
+      baseUrl: process.env.XETHER_AI_TEST_URL || 'https://api-test.xether.ai'
+    });
+  });
+
+  test('should create and get dataset', async () => {
+    // Create dataset
+    const dataset = await client.datasets.create({
+      name: 'test-dataset',
+      description: 'Test dataset for integration testing'
+    });
+
+    expect(dataset.id).toBeDefined();
+    expect(dataset.name).toBe('test-dataset');
+
+    // Get dataset
+    const retrievedDataset = await client.datasets.get(dataset.id);
+
+    expect(retrievedDataset.id).toBe(dataset.id);
+    expect(retrievedDataset.name).toBe('test-dataset');
+
+    // Cleanup
+    await client.datasets.delete(dataset.id);
+  }, 30000); // 30 second timeout
+});
+```
+
+## Best Practices
+
+### Resource Management
+
+```javascript
+// Use async/await properly
+async function processDatasets() {
+  const client = new XetherAI({ apiKey: 'your-api-key' });
+  
+  try {
+    const datasets = await client.datasets.list();
+    
+    // Process datasets
+    for (const dataset of datasets) {
+      await processDataset(client, dataset);
+    }
+  } finally {
+    // Cleanup if needed (SDK handles most cleanup automatically)
+    await client.close?.();
+  }
+}
+```
+
+### Configuration Management
+
+```javascript
+// Environment-specific configuration
+function createClient() {
+  const env = process.env.NODE_ENV || 'development';
+  
+  const config = {
+    apiKey: process.env[`XETHER_AI_${env.toUpperCase()}_API_KEY`],
+    baseUrl: env === 'production' 
+      ? 'https://api.xether.ai' 
+      : 'https://api-dev.xether.ai',
+    timeout: env === 'production' ? 60000 : 30000,
+    maxRetries: env === 'production' ? 5 : 3
+  };
+
+  return new XetherAI(config);
+}
+```
+
+### Batch Operations
+
+```javascript
+// Efficient batch processing
+async function processMultipleDatasets(client, datasetIds, batchSize = 10) {
+  const results = [];
+  
+  for (let i = 0; i < datasetIds.length; i += batchSize) {
+    const batch = datasetIds.slice(i, i + batchSize);
+    
+    const batchPromises = batch.map(async (datasetId) => {
+      try {
+        const dataset = await client.datasets.get(datasetId);
+        return { success: true, dataset };
+      } catch (error) {
+        return { success: false, datasetId, error };
+      }
+    });
+    
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+    
+    // Add delay between batches to avoid rate limiting
+    if (i + batchSize < datasetIds.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  
+  return results;
+}
+```
+
+This comprehensive JavaScript SDK documentation provides everything needed to effectively use the Xether AI platform from JavaScript and TypeScript applications, with detailed examples for both Node.js and browser environments.
