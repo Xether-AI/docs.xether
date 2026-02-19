@@ -16,7 +16,7 @@ export default async function DocsPage({ params }: PageProps) {
     const { default: Content } = await import(`@/content/${path}.mdx`);
 
     return (
-      <div className="prose prose-zinc dark:prose-invert max-w-none">
+      <div className="prose-doc max-w-none">
         <Content />
       </div>
     );
