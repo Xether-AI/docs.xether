@@ -27,9 +27,9 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm flex items-center justify-center">
+        <div className="container flex h-14 items-center justify-between px-4 w-full">
+          <div className="flex items-center justify-center gap-6">
             <Link href="/" className="flex items-center space-x-2">
               <span className="font-bold text-lg tracking-tight">
                 Xether <span className="text-primary">AI</span>
@@ -50,17 +50,17 @@ export function SiteHeader() {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             {/* Desktop Search */}
             <div className="hidden md:block relative">
-              <SearchInput 
+              <SearchInput
                 className="w-64 lg:w-80"
                 placeholder="Search documentation... (⌘K)"
                 isOpen={isSearchOpen}
                 onOpenChange={setIsSearchOpen}
               />
             </div>
-            
+
             {/* Mobile Search Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
@@ -86,7 +86,7 @@ export function SiteHeader() {
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm md:hidden">
           <div className="container mx-auto px-4 pt-20">
-            <SearchInput 
+            <SearchInput
               className="w-full"
               placeholder="Search documentation..."
               autoFocus
