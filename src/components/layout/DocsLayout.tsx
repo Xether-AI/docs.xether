@@ -6,6 +6,8 @@ import { Breadcrumbs } from "./Breadcrumbs";
 import { DocNavigation } from "./DocNavigation";
 import { VersionSelector } from "./VersionSelector";
 import { DeprecationNotice } from "./DeprecationNotice";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { EditOnGitHub } from "@/components/feedback/EditOnGitHub";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -52,8 +54,14 @@ export function DocsLayout({ children }: DocsLayoutProps) {
             <Breadcrumbs />
             <article className="prose-doc max-w-none">{children}</article>
 
+            {/* Feedback Widget */}
+            <FeedbackWidget />
+
             {/* Prev / Next navigation */}
             <DocNavigation />
+
+            {/* Edit on GitHub */}
+            <EditOnGitHub />
           </main>
 
           {/* Right TOC column — rendered per-page via layout slot */}
