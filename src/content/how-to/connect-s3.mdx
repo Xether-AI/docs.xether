@@ -1,0 +1,589 @@
+---
+title: "How to Connect to S3"
+description: "Step-by-step guide to connect Xether AI with Amazon S3"
+published: true
+---
+
+# How to Connect to Amazon S3
+
+This guide walks you through connecting Xether AI with Amazon S3 for data storage and retrieval in your pipelines.
+
+## Prerequisites
+
+- AWS account with S3 access
+- Xether AI account
+- AWS CLI installed (optional)
+- Basic understanding of AWS IAM
+
+## Step 1: Create S3 Bucket
+
+### 1.1 Using AWS Console
+
+1. Log in to [AWS Console](https://console.aws.amazon.com/)
+2. Navigate to S3 service
+3. Click "Create bucket"
+4. Enter bucket name (must be globally unique)
+5. Select AWS region
+6. Configure settings (keep defaults for now)
+7. Click "Create bucket"
+
+### 1.2 Using AWS CLI
+
+```bash
+# Create bucket
+aws s3 mb s3://your-unique-bucket-name
+
+# Verify bucket creation
+aws s3 ls
+```
+
+## Step 2: Configure AWS Credentials
+
+### 2.1 Create IAM User
+
+1. Go to IAM service in AWS Console
+2. Click "Users" → "Add user"
+3. Enter username (e.g., `xether-ai-user`)
+4. Select "Access key - Programmatic access"
+5. Click "Next: Permissions"
+6. Attach policies:
+   - `AmazonS3ReadOnlyAccess` (for reading data)
+   - `AmazonS3FullAccess` (for full access)
+7. Click "Next: Tags" → "Next: Review"
+8. Create user and save access key and secret key
+
+### 2.2 Configure Credentials in Xether AI
+
+#### Method 1: Environment Variables
+
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+#### Method 2: Xether AI Dashboard
+
+1. Go to Settings → Integrations
+2. Add AWS integration
+3. Enter credentials
+4. Test connection
+
+#### Method 3: Pipeline Configuration
+
+```yaml:s3-pipeline.yaml
+stages:
+  - name: "read-from-s3"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/input.csv"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+          region: "us-east-1"
+```
+
+## Step 3: Upload Sample Data
+
+### 3.1 Using AWS Console
+
+1. Navigate to your S3 bucket
+2. Click "Upload"
+3. Select your data files
+4. Click "Upload"
+
+### 3.2 Using AWS CLI
+
+```bash
+# Upload single file
+aws s3 cp local-file.csv s3://your-bucket-name/data/
+
+# Upload entire directory
+aws s3 sync local-directory/ s3://your-bucket-name/data/
+```
+
+### 3.3 Sample Data
+
+Create a sample CSV file:
+
+```csv:sample_data.csv
+customer_id,name,email,age,city,purchase_amount
+1,John Doe,john@example.com,28,New York,150.50
+2,Jane Smith,jane@example.com,34,Los Angeles,89.99
+3,Bob Johnson,bob@example.com,45,Chicago,234.75
+4,Alice Williams,alice@example.com,29,Houston,67.25
+5,Charlie Brown,charlie@example.com,38,Boston,198.00
+```
+
+Upload it to S3:
+
+```bash
+aws s3 cp sample_data.csv s3://your-bucket-name/data/input/
+```
+
+## Step 4: Create S3 Pipeline
+
+### 4.1 Read from S3 Pipeline
+
+```yaml:s3-read-pipeline.yaml
+name: "S3 Data Ingestion Pipeline"
+version: "1.0"
+description: "Read data from S3 and process it"
+
+stages:
+  - name: "read-from-s3"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/input/sample_data.csv"
+        format: "csv"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+          region: "us-east-1"
+      output:
+        dataset: "s3_data"
+  
+  - name: "process-data"
+    type: "transformation"
+    config:
+      input:
+        dataset: "s3_data"
+      operations:
+        - type: "filter"
+          condition: "purchase_amount > 100"
+        - type: "transform"
+          column: "email"
+          function: "lowercase"
+      output:
+        dataset: "processed_data"
+  
+  - name: "save-to-s3"
+    type: "output"
+    config:
+      input:
+        dataset: "processed_data"
+      destination:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/output/processed_data.csv"
+        format: "csv"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+          region: "us-east-1"
+```
+
+### 4.2 Batch Processing Pipeline
+
+```yaml:s3-batch-pipeline.yaml
+name: "S3 Batch Processing Pipeline"
+version: "1.0"
+description: "Process multiple files from S3"
+
+stages:
+  - name: "list-s3-files"
+    type: "discovery"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        prefix: "data/input/"
+        pattern: "*.csv"
+      output:
+        file_list: "s3_files"
+  
+  - name: "process-batch"
+    type: "batch_processing"
+    config:
+      file_list: "s3_files"
+      operations:
+        - name: "read-csv"
+          type: "ingestion"
+          config:
+            format: "csv"
+        
+        - name: "clean-data"
+          type: "cleaning"
+          config:
+            operations:
+              - type: "remove_duplicates"
+              - type: "fill_missing"
+                strategy: "mean"
+        
+        - name: "save-output"
+          type: "output"
+          config:
+            destination:
+              type: "s3"
+              bucket: "your-bucket-name"
+              prefix: "data/processed/"
+              format: "csv"
+```
+
+## Step 5: Advanced S3 Features
+
+### 5.1 S3 Event Triggers
+
+Set up S3 to automatically trigger pipelines when new files are uploaded:
+
+#### 5.1.1 Create Lambda Function
+
+```python:lambda_function.py
+import json
+import boto3
+import requests
+
+def lambda_handler(event, context):
+    # Get S3 event details
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+    
+    # Trigger Xether AI pipeline
+    webhook_url = "https://api.xether.ai/v1/webhook/s3-trigger"
+    payload = {
+        "event_type": "s3_file_created",
+        "bucket": bucket,
+        "key": key,
+        "pipeline_id": "your-pipeline-id"
+    }
+    
+    response = requests.post(webhook_url, json=payload)
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Pipeline triggered successfully')
+    }
+```
+
+#### 5.1.2 Set Up S3 Event Notification
+
+1. Go to S3 bucket → Properties → Event notifications
+2. Click "Create event notification"
+3. Enter event name
+4. Select event types: `s3:ObjectCreated:*`
+5. Select prefix: `data/input/`
+6. Choose destination: Lambda function
+7. Select your Lambda function
+8. Click "Create event notification"
+
+### 5.2 S3 Select for Query Optimization
+
+Use S3 Select to query only the data you need:
+
+```yaml:s3-select-pipeline.yaml
+stages:
+  - name: "query-s3-select"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3_select"
+        bucket: "your-bucket-name"
+        key: "data/large_dataset.csv"
+        query: "SELECT customer_id, name, purchase_amount FROM s3object WHERE purchase_amount > 100"
+        input_format:
+          type: "csv"
+          file_header_info: "USE"
+          comments: "#"
+        output_format:
+          type: "csv"
+      output:
+        dataset: "filtered_data"
+```
+
+### 5.3 Multi-Region S3
+
+Configure pipelines to work with S3 buckets in different regions:
+
+```yaml:multi-region-s3.yaml
+stages:
+  - name: "read-from-us-east-1"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-us-east-1"
+        key: "data/input.csv"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+          region: "us-east-1"
+      output:
+        dataset: "us_data"
+  
+  - name: "read-from-eu-west-1"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-eu-west-1"
+        key: "data/input.csv"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+          region: "eu-west-1"
+      output:
+        dataset: "eu_data"
+  
+  - name: "combine-regional-data"
+    type: "transformation"
+    config:
+      input:
+        datasets: ["us_data", "eu_data"]
+      operations:
+        - type: "union"
+        - type: "add_region_column"
+          region_column: "source_region"
+      output:
+        dataset: "combined_data"
+```
+
+## Step 6: Security Best Practices
+
+### 6.1 Use IAM Roles (Recommended)
+
+Instead of access keys, use IAM roles for better security:
+
+```yaml:s3-role-pipeline.yaml
+stages:
+  - name: "read-with-role"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/input.csv"
+        credentials:
+          role_arn: "arn:aws:iam::123456789012:role/XetherAIRole"
+          external_id: "your-external-id"
+          region: "us-east-1"
+      output:
+        dataset: "s3_data"
+```
+
+### 6.2 Encryption
+
+Configure S3 encryption:
+
+```yaml:s3-encrypted-pipeline.yaml
+stages:
+  - name: "read-encrypted-s3"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/encrypted_input.csv"
+        encryption:
+          type: "sse-kms"
+          key_id: "arn:aws:kms:us-east-1:123456789012:key/your-kms-key"
+      output:
+        dataset: "encrypted_data"
+```
+
+### 6.3 VPC Endpoints
+
+Use VPC endpoints for secure S3 access:
+
+```yaml:s3-vpc-pipeline.yaml
+stages:
+  - name: "read-through-vpc"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/input.csv"
+        network:
+          vpc_endpoint: "vpce-1234567890abcdef0"
+          subnet_id: "subnet-12345678"
+        credentials:
+          access_key_id: "${AWS_ACCESS_KEY_ID}"
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+      output:
+        dataset: "vpc_data"
+```
+
+## Step 7: Monitoring and Troubleshooting
+
+### 7.1 Monitor S3 Operations
+
+```yaml:s3-monitoring.yaml
+stages:
+  - name: "monitor-s3-access"
+    type: "monitoring"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+      metrics:
+        - name: "file_count"
+          type: "object_count"
+          prefix: "data/"
+        - name: "storage_size"
+          type: "storage_size"
+          prefix: "data/"
+      output:
+        metrics: "s3_metrics"
+```
+
+### 7.2 Common Issues and Solutions
+
+#### Issue: "Access Denied"
+```bash
+# Check IAM permissions
+aws iam get-user-policy --user-name xether-ai-user --policy-name S3Access
+
+# Test S3 access
+aws s3 ls s3://your-bucket-name
+```
+
+#### Issue: "Connection Timeout"
+```yaml
+# Add timeout configuration
+stages:
+  - name: "read-with-timeout"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/input.csv"
+        timeout: 300  # 5 minutes
+        retry_count: 3
+```
+
+#### Issue: "Large File Processing"
+```yaml
+# Use multipart upload
+stages:
+  - name: "process-large-file"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/large_file.csv"
+        multipart:
+          enabled: true
+          chunk_size: 10485760  # 10MB chunks
+```
+
+## Step 8: Cost Optimization
+
+### 8.1 S3 Storage Classes
+
+Use appropriate storage classes:
+
+```yaml:s3-storage-classes.yaml
+stages:
+  - name: "read-from-glacier"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/archive.csv"
+        storage_class: "glacier"
+        restore:
+          days: 7
+          tier: "Expedited"
+      output:
+        dataset: "archived_data"
+```
+
+### 8.2 Lifecycle Policies
+
+Set up lifecycle policies for cost optimization:
+
+```bash
+# Create lifecycle policy
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket your-bucket-name \
+  --lifecycle-configuration file://lifecycle-policy.json
+```
+
+```json:lifecycle-policy.json
+{
+  "Rules": [
+    {
+      "ID": "MoveToIA",
+      "Status": "Enabled",
+      "Transitions": [
+        {
+          "Days": 30,
+          "StorageClass": "STANDARD_IA"
+        },
+        {
+          "Days": 90,
+          "StorageClass": "GLACIER"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Testing Your S3 Connection
+
+### Test Pipeline
+
+Create a simple test pipeline to verify your S3 connection:
+
+```yaml:s3-test.yaml
+name: "S3 Connection Test"
+version: "1.0"
+description: "Test S3 connectivity"
+
+stages:
+  - name: "test-s3-read"
+    type: "ingestion"
+    config:
+      source:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/test.csv"
+        format: "csv"
+      output:
+        dataset: "test_data"
+  
+  - name: "test-s3-write"
+    type: "output"
+    config:
+      input:
+        dataset: "test_data"
+      destination:
+        type: "s3"
+        bucket: "your-bucket-name"
+        key: "data/test_output.csv"
+        format: "csv"
+```
+
+Run the test:
+
+```bash
+xether pipeline run s3-test.yaml
+```
+
+## Next Steps
+
+1. **Automate Data Ingestion**: Set up S3 event triggers
+2. **Implement Data Validation**: Add quality checks for S3 data
+3. **Monitor Costs**: Track S3 usage and optimize storage classes
+4. **Scale Processing**: Use batch processing for large datasets
+
+## Additional Resources
+
+- [S3 Documentation](https://docs.aws.amazon.com/s3/)
+- [IAM Best Practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
+- [Xether AI S3 Integration](/docs/integrations/s3)
+- [Pipeline Configuration Reference](/docs/pipelines/stage-reference)
+
+---
+
+**Happy connecting! 🪣**
