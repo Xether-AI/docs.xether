@@ -1,0 +1,542 @@
+---
+title: "Data Cleaning Tutorial"
+description: "Learn comprehensive data cleaning techniques with Xether AI"
+published: true
+---
+
+# Data Cleaning Tutorial
+
+Data cleaning is a critical step in any data pipeline. This tutorial covers essential data cleaning techniques using Xether AI's powerful cleaning capabilities.
+
+## What You'll Learn
+
+- Common data quality issues and how to fix them
+- Handling missing values
+- Removing duplicates
+- Standardizing data formats
+- Outlier detection and treatment
+- Best practices for data cleaning
+
+## Prerequisites
+
+- Completed [Your First Pipeline](/docs/tutorials/first-pipeline) tutorial
+- Understanding of basic pipeline concepts
+- Sample dataset (provided below)
+
+## Sample Dataset
+
+Let's work with a realistic messy dataset:
+
+```csv:raw_sales_data.csv
+order_id,customer_name,email,product,price,quantity,order_date,status
+1001,John Doe,john.doe@email.com,Laptop,999.99,1,2024-01-15,completed
+1002,Jane Smith,jane.smith@,Tablet,299.99,2,2024-01-16,completed
+1003,Bob Johnson,bob@johnson.com,Mouse,19.99,,2024-01-17,pending
+1004,Alice Williams,alice@williams.com,Keyboard,79.99,1,2024-01-18,completed
+1005,John DOE,john.doe@email.com,Laptop,999.99,1,2024-01-19,completed
+1006,Charlie Brown,charlie@brown.com,Monitor,299.99,1,15/01/2024,shipped
+1007,,missing@email.com,Phone,699.99,1,2024-01-21,completed
+1008,Diana Prince,diana@wonder.com,Tablet,299.99,3,2024-01-22,cancelled
+1009,Bob Johnson,bob@johnson.com,Mouse,19.99,2,2024-01-23,completed
+1010,Eve Wilson,eve@wilson.com,Laptop,999.99,1,2024-13-24,completed
+```
+
+## Step 1: Identify Data Quality Issues
+
+Let's analyze our dataset and identify issues:
+
+1. **Missing Values**: `quantity` (row 3), `customer_name` (row 7)
+2. **Invalid Emails**: `jane.smith@` (row 2)
+3. **Duplicates**: John Doe appears twice (rows 1, 5)
+4. **Inconsistent Names**: "John DOE" vs "John Doe" (case inconsistency)
+5. **Date Format Issues**: `15/01/2024` vs `2024-01-15` (row 6)
+6. **Invalid Dates**: `2024-13-24` (row 10)
+7. **Negative Values**: None in this dataset, but common issue
+
+## Step 2: Create Cleaning Pipeline
+
+### 2.1 Basic Pipeline Structure
+
+```yaml:data-cleaning-pipeline.yaml
+name: "Data Cleaning Tutorial"
+version: "1.0"
+description: "Comprehensive data cleaning pipeline"
+
+stages:
+  - name: "ingest-raw-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "raw_sales_data.csv"
+      output:
+        dataset: "raw_sales"
+```
+
+### 2.2 Handle Missing Values
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stage ...
+  
+  - name: "handle-missing-values"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "raw_sales"
+      operations:
+        # Fill missing quantity with median
+        - type: "fill_missing"
+          column: "quantity"
+          strategy: "median"
+        
+        # Drop rows with missing customer_name
+        - type: "fill_missing"
+          column: "customer_name"
+          strategy: "drop_row"
+        
+        # Fill missing emails with placeholder
+        - type: "fill_missing"
+          column: "email"
+          strategy: "value"
+          value: "unknown@example.com"
+      output:
+        dataset: "filled_missing"
+```
+
+### 2.3 Standardize Text Data
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "standardize-text"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "filled_missing"
+      operations:
+        # Standardize customer names (proper case)
+        - type: "standardize_text"
+          column: "customer_name"
+          case: "title"
+        
+        # Standardize emails (lowercase)
+        - type: "standardize_text"
+          column: "email"
+          case: "lower"
+        
+        # Standardize status (lowercase)
+        - type: "standardize_text"
+          column: "status"
+          case: "lower"
+      output:
+        dataset: "standardized_text"
+```
+
+### 2.4 Validate and Fix Emails
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "validate-emails"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "standardized_text"
+      operations:
+        # Fix invalid emails
+        - type: "validate_pattern"
+          column: "email"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+          action: "fix"
+          default_value: "invalid@example.com"
+      output:
+        dataset: "validated_emails"
+```
+
+### 2.5 Standardize Dates
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "standardize-dates"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "validated_emails"
+      operations:
+        # Standardize date formats
+        - type: "standardize_date"
+          column: "order_date"
+          input_formats: ["%Y-%m-%d", "%d/%m/%Y"]
+          output_format: "%Y-%m-%d"
+        
+        # Handle invalid dates
+        - type: "validate_date"
+          column: "order_date"
+          action: "drop_row"
+      output:
+        dataset: "standardized_dates"
+```
+
+### 2.6 Remove Duplicates
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "remove-duplicates"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "standardized_dates"
+      operations:
+        # Remove duplicate rows based on customer_name, email, product, order_date
+        - type: "remove_duplicates"
+          columns: ["customer_name", "email", "product", "order_date"]
+          keep: "first"
+      output:
+        dataset: "deduplicated_data"
+```
+
+### 2.7 Detect and Handle Outliers
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "handle-outliers"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "deduplicated_data"
+      operations:
+        # Detect outliers in price using IQR method
+        - type: "detect_outliers"
+          column: "price"
+          method: "iqr"
+          action: "flag"
+        
+        # Detect outliers in quantity
+        - type: "detect_outliers"
+          column: "quantity"
+          method: "zscore"
+          threshold: 3
+          action: "flag"
+      output:
+        dataset: "outlier_flagged"
+```
+
+## Step 3: Add Validation Rules
+
+```yaml:data-cleaning-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "validate-cleaned-data"
+    type: "validation"
+    config:
+      input:
+        dataset: "outlier_flagged"
+      rules:
+        # Validate order_id is positive integer
+        - column: "order_id"
+          type: "integer"
+          min: 1
+        
+        # Validate price is positive
+        - column: "price"
+          type: "range"
+          min: 0
+        
+        # Validate quantity is positive integer
+        - column: "quantity"
+          type: "integer"
+          min: 1
+        
+        # Validate email format
+        - column: "email"
+          type: "pattern"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+        
+        # Validate status values
+        - column: "status"
+          type: "enum"
+          values: ["completed", "pending", "shipped", "cancelled"]
+      output:
+        dataset: "validated_clean_data"
+```
+
+## Step 4: Complete Pipeline
+
+```yaml:data-cleaning-pipeline.yaml
+name: "Data Cleaning Tutorial"
+version: "1.0"
+description: "Comprehensive data cleaning pipeline"
+
+stages:
+  - name: "ingest-raw-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "raw_sales_data.csv"
+      output:
+        dataset: "raw_sales"
+  
+  - name: "handle-missing-values"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "raw_sales"
+      operations:
+        - type: "fill_missing"
+          column: "quantity"
+          strategy: "median"
+        - type: "fill_missing"
+          column: "customer_name"
+          strategy: "drop_row"
+        - type: "fill_missing"
+          column: "email"
+          strategy: "value"
+          value: "unknown@example.com"
+      output:
+        dataset: "filled_missing"
+  
+  - name: "standardize-text"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "filled_missing"
+      operations:
+        - type: "standardize_text"
+          column: "customer_name"
+          case: "title"
+        - type: "standardize_text"
+          column: "email"
+          case: "lower"
+        - type: "standardize_text"
+          column: "status"
+          case: "lower"
+      output:
+        dataset: "standardized_text"
+  
+  - name: "validate-emails"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "standardized_text"
+      operations:
+        - type: "validate_pattern"
+          column: "email"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+          action: "fix"
+          default_value: "invalid@example.com"
+      output:
+        dataset: "validated_emails"
+  
+  - name: "standardize-dates"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "validated_emails"
+      operations:
+        - type: "standardize_date"
+          column: "order_date"
+          input_formats: ["%Y-%m-%d", "%d/%m/%Y"]
+          output_format: "%Y-%m-%d"
+        - type: "validate_date"
+          column: "order_date"
+          action: "drop_row"
+      output:
+        dataset: "standardized_dates"
+  
+  - name: "remove-duplicates"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "standardized_dates"
+      operations:
+        - type: "remove_duplicates"
+          columns: ["customer_name", "email", "product", "order_date"]
+          keep: "first"
+      output:
+        dataset: "deduplicated_data"
+  
+  - name: "handle-outliers"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "deduplicated_data"
+      operations:
+        - type: "detect_outliers"
+          column: "price"
+          method: "iqr"
+          action: "flag"
+        - type: "detect_outliers"
+          column: "quantity"
+          method: "zscore"
+          threshold: 3
+          action: "flag"
+      output:
+        dataset: "outlier_flagged"
+  
+  - name: "validate-cleaned-data"
+    type: "validation"
+    config:
+      input:
+        dataset: "outlier_flagged"
+      rules:
+        - column: "order_id"
+          type: "integer"
+          min: 1
+        - column: "price"
+          type: "range"
+          min: 0
+        - column: "quantity"
+          type: "integer"
+          min: 1
+        - column: "email"
+          type: "pattern"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+        - column: "status"
+          type: "enum"
+          values: ["completed", "pending", "shipped", "cancelled"]
+      output:
+        dataset: "validated_clean_data"
+```
+
+## Step 5: Run and Analyze Results
+
+### Expected Results
+
+1. **Original Data**: 10 rows
+2. **After Missing Value Handling**: 9 rows (1 dropped for missing customer_name)
+3. **After Deduplication**: 8 rows (1 duplicate removed)
+4. **After Date Validation**: 7 rows (1 dropped for invalid date)
+5. **Final Validated Data**: 7 rows with all quality issues resolved
+
+### Quality Metrics
+
+```python
+# Calculate data quality metrics
+def calculate_quality_metrics(original_df, cleaned_df):
+    original_rows = len(original_df)
+    cleaned_rows = len(cleaned_df)
+    
+    metrics = {
+        "data_reduction_rate": (original_rows - cleaned_rows) / original_rows * 100,
+        "completeness_score": cleaned_df.notnull().sum().sum() / (cleaned_df.shape[0] * cleaned_df.shape[1]) * 100,
+        "uniqueness_score": cleaned_df.nunique().mean() / cleaned_df.shape[0] * 100
+    }
+    
+    return metrics
+```
+
+## Advanced Cleaning Techniques
+
+### Custom Cleaning Functions
+
+```yaml:data-cleaning-pipeline.yaml
+- name: "custom-cleaning"
+  type: "cleaning"
+  config:
+    input:
+      dataset: "previous_stage"
+    operations:
+      - type: "custom"
+        function: |
+          def clean_phone_number(phone):
+              import re
+              # Remove all non-numeric characters
+              return re.sub(r'[^\d]', '', phone)
+        column: "phone"
+        output_column: "cleaned_phone"
+```
+
+### Machine Learning-Based Cleaning
+
+```yaml:data-cleaning-pipeline.yaml
+- name: "ml-based-cleaning"
+  type: "ml_cleaning"
+  config:
+    input:
+      dataset: "previous_stage"
+    model:
+      type: "anomaly_detection"
+      features: ["price", "quantity"]
+    action: "flag"
+    output:
+      dataset: "ml_cleaned"
+```
+
+## Best Practices
+
+### 1. Understand Your Data
+
+- Always explore your data before cleaning
+- Document assumptions about data quality
+- Keep track of cleaning decisions
+
+### 2. Preserve Original Data
+
+- Never modify the original dataset
+- Keep a copy of raw data for reference
+- Use versioning for datasets
+
+### 3. Validate at Each Step
+
+- Add validation after each cleaning operation
+- Monitor data quality metrics
+- Set up alerts for quality degradation
+
+### 4. Handle Edge Cases
+
+- Consider null values, empty strings, special characters
+- Plan for different data types and formats
+- Handle timezone differences in dates
+
+### 5. Document Everything
+
+- Record cleaning rules and parameters
+- Document why certain decisions were made
+- Share cleaning knowledge with team
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: "Too much data lost during cleaning"
+- **Solution**: Review your cleaning rules, adjust thresholds
+
+**Issue**: "Performance is slow"
+- **Solution**: Use chunked processing for large datasets
+
+**Issue**: "Cleaning rules too strict"
+- **Solution**: Add exceptions for valid edge cases
+
+**Issue**: "Data format keeps changing"
+- **Solution**: Implement schema validation at ingestion
+
+## Next Steps
+
+1. **Automate Quality Monitoring**: Set up continuous data quality checks
+2. **Create Cleaning Templates**: Build reusable cleaning pipelines
+3. **Implement Data Governance**: Establish data quality standards
+4. **Monitor Pipeline Performance**: Track cleaning efficiency over time
+
+## Additional Resources
+
+- [Data Cleaning Best Practices](/docs/pipelines/basics)
+- [Validation Rules Reference](/docs/pipelines/stage-reference)
+- [Data Quality Metrics](/docs/datasets/metadata)
+- [API Documentation](/docs/api-reference)
+
+---
+
+**Happy cleaning! 🧹**

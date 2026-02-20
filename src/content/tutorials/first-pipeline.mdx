@@ -1,0 +1,332 @@
+---
+title: "Your First Pipeline"
+description: "Learn how to create your first data pipeline with Xether AI"
+published: true
+---
+
+# Your First Pipeline
+
+Welcome to your first data pipeline tutorial! In this guide, you'll learn how to create a complete data pipeline from scratch using Xether AI.
+
+## What You'll Build
+
+We'll create a simple but powerful pipeline that:
+1. Ingests customer data from a CSV file
+2. Cleans and validates the data
+3. Generates synthetic data for testing
+4. Outputs a clean, validated dataset
+
+## Prerequisites
+
+- Xether AI account (free tier works)
+- Basic understanding of CSV files
+- 10 minutes of your time
+
+## Step 1: Prepare Your Data
+
+First, let's create a sample CSV file with customer data:
+
+```csv:customers.csv
+id,name,email,age,city,salary
+1,John Doe,john@example.com,28,New York,75000
+2,Jane Smith,jane@example.com,34,Los Angeles,82000
+3,Bob Johnson,bob@example.com,45,Chicago,95000
+4,Alice Williams,alice@example.com,29,Houston,68000
+5,Charlie Brown,charlie@example.com,,Boston,72000
+```
+
+Save this as `customers.csv` on your computer.
+
+## Step 2: Create the Pipeline
+
+### 2.1 Initialize Your Pipeline
+
+Create a new file called `first-pipeline.yaml`:
+
+```yaml:first-pipeline.yaml
+name: "Customer Data Pipeline"
+version: "1.0"
+description: "Process customer data with cleaning and validation"
+
+stages: []
+```
+
+### 2.2 Add Data Ingestion
+
+Let's add the first stage to ingest our CSV data:
+
+```yaml:first-pipeline.yaml
+stages:
+  - name: "ingest-customer-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "customers.csv"
+      output:
+        dataset: "raw_customers"
+```
+
+### 2.3 Add Data Cleaning
+
+Now let's clean the data by handling missing values:
+
+```yaml:first-pipeline.yaml
+stages:
+  - name: "ingest-customer-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "customers.csv"
+      output:
+        dataset: "raw_customers"
+  
+  - name: "clean-customer-data"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "raw_customers"
+      operations:
+        - type: "fill_missing"
+          column: "age"
+          strategy: "median"
+        - type: "fill_missing"
+          column: "email"
+          strategy: "drop_row"
+      output:
+        dataset: "clean_customers"
+```
+
+### 2.4 Add Data Validation
+
+Let's validate our cleaned data:
+
+```yaml:first-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "validate-customer-data"
+    type: "validation"
+    config:
+      input:
+        dataset: "clean_customers"
+      rules:
+        - column: "age"
+          type: "range"
+          min: 18
+          max: 100
+        - column: "email"
+          type: "pattern"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+        - column: "salary"
+          type: "range"
+          min: 0
+      output:
+        dataset: "validated_customers"
+```
+
+### 2.5 Add Synthetic Data Generation
+
+Finally, let's generate some synthetic data for testing:
+
+```yaml:first-pipeline.yaml
+stages:
+  # ... previous stages ...
+  
+  - name: "generate-synthetic-data"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "validated_customers"
+      output:
+        dataset: "synthetic_customers"
+      config:
+        num_samples: 100
+        preserve_schema: true
+        noise_factor: 0.1
+```
+
+## Step 3: Complete Pipeline
+
+Here's the complete pipeline file:
+
+```yaml:first-pipeline.yaml
+name: "Customer Data Pipeline"
+version: "1.0"
+description: "Process customer data with cleaning and validation"
+
+stages:
+  - name: "ingest-customer-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "customers.csv"
+      output:
+        dataset: "raw_customers"
+  
+  - name: "clean-customer-data"
+    type: "cleaning"
+    config:
+      input:
+        dataset: "raw_customers"
+      operations:
+        - type: "fill_missing"
+          column: "age"
+          strategy: "median"
+        - type: "fill_missing"
+          column: "email"
+          strategy: "drop_row"
+      output:
+        dataset: "clean_customers"
+  
+  - name: "validate-customer-data"
+    type: "validation"
+    config:
+      input:
+        dataset: "clean_customers"
+      rules:
+        - column: "age"
+          type: "range"
+          min: 18
+          max: 100
+        - column: "email"
+          type: "pattern"
+          pattern: "^[^@]+@[^@]+\.[^@]+$"
+        - column: "salary"
+          type: "range"
+          min: 0
+      output:
+        dataset: "validated_customers"
+  
+  - name: "generate-synthetic-data"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "validated_customers"
+      output:
+        dataset: "synthetic_customers"
+      config:
+        num_samples: 100
+        preserve_schema: true
+        noise_factor: 0.1
+```
+
+## Step 4: Run the Pipeline
+
+### 4.1 Using the Web Interface
+
+1. Log in to your Xether AI dashboard
+2. Navigate to "Pipelines" → "Create New Pipeline"
+3. Upload your `first-pipeline.yaml` file
+4. Upload your `customers.csv` file
+5. Click "Run Pipeline"
+
+### 4.2 Using the CLI
+
+```bash
+# Install the CLI
+pip install xether-cli
+
+# Login
+xether login
+
+# Run the pipeline
+xether pipeline run first-pipeline.yaml --data customers.csv
+```
+
+### 4.3 Using the Python SDK
+
+```python
+from xether import Client
+
+# Initialize client
+client = Client(api_key="your-api-key")
+
+# Load pipeline
+pipeline = client.pipelines.load("first-pipeline.yaml")
+
+# Run pipeline
+result = pipeline.run(data_source="customers.csv")
+
+# Check results
+print(f"Pipeline status: {result.status}")
+print(f"Records processed: {result.records_processed}")
+```
+
+## Step 5: Check the Results
+
+After the pipeline completes, you should see:
+
+1. **Raw Data**: 5 records (original CSV)
+2. **Cleaned Data**: 4 records (1 row dropped due to missing email)
+3. **Validated Data**: 4 records (all passed validation)
+4. **Synthetic Data**: 100 records (generated for testing)
+
+### View Results in Dashboard
+
+1. Go to "Datasets" in your dashboard
+2. Click on each dataset to see the processed data
+3. Download the results as CSV or JSON
+
+### View Results via API
+
+```bash
+# Get pipeline status
+curl -H "Authorization: Bearer your-api-key" \
+     https://api.xether.ai/v1/pipelines/your-pipeline-id/status
+
+# Get dataset
+curl -H "Authorization: Bearer your-api-key" \
+     https://api.xether.ai/v1/datasets/validated_customers
+```
+
+## Step 6: Monitor and Debug
+
+### Check Pipeline Logs
+
+```bash
+# View execution logs
+xether pipeline logs your-pipeline-id
+```
+
+### Common Issues and Solutions
+
+**Issue**: "Missing file error"
+- **Solution**: Ensure the CSV file is in the correct location and the path matches
+
+**Issue**: "Validation failed"
+- **Solution**: Check your data against the validation rules
+
+**Issue**: "Memory error"
+- **Solution**: For large datasets, consider using chunked processing
+
+## Next Steps
+
+Congratulations! You've created your first data pipeline. Here are some next steps:
+
+1. **Experiment with Different Data Sources**: Try connecting to databases or APIs
+2. **Add More Complex Transformations**: Explore data augmentation and feature engineering
+3. **Set Up Automated Runs**: Schedule your pipeline to run automatically
+4. **Monitor Performance**: Set up alerts for pipeline failures
+
+## Additional Resources
+
+- [Pipeline Configuration Reference](/docs/pipelines/stage-reference)
+- [Data Cleaning Best Practices](/docs/pipelines/basics)
+- [API Documentation](/docs/api-reference)
+- [Community Forum](https://community.xether.ai)
+
+## Need Help?
+
+- Check our [troubleshooting guide](/docs/troubleshooting)
+- Join our [Discord community](https://discord.gg/xether)
+- Contact [support@xether.ai](mailto:support@xether.ai)
+
+---
+
+**Happy piping! 🚀**
