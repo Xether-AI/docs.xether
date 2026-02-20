@@ -43,13 +43,36 @@ Dataset → [Ingest] → [Clean] → [Validate] → [Transform] → [Augment] �
 
 ### Stage Types
 
-| Stage       | Purpose                                     |
-| ----------- | ------------------------------------------- |
-| `ingest`    | Read data from a source (S3, database, API) |
-| `clean`     | Remove nulls, normalize formats, fix types  |
-| `validate`  | Assert data quality rules                   |
-| `transform` | Reshape, join, aggregate data               |
-| `augment`   | Enrich with external data or ML predictions |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Stage</TableHead>
+      <TableHead>Purpose</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-mono">ingest</TableCell>
+      <TableCell>Read data from a source (S3, database, API)</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">clean</TableCell>
+      <TableCell>Remove nulls, normalize formats, fix types</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">validate</TableCell>
+      <TableCell>Assert data quality rules</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">transform</TableCell>
+      <TableCell>Reshape, join, aggregate data</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">augment</TableCell>
+      <TableCell>Enrich with external data or ML predictions</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 ## Versions
 

@@ -262,25 +262,102 @@ config:
 
 ## Data Type Mapping
 
-| PostgreSQL Type | Xether AI Type | Notes |
-|-----------------|----------------|-------|
-| INTEGER | integer | 32-bit integer |
-| BIGINT | long | 64-bit integer |
-| SMALLINT | short | 16-bit integer |
-| DECIMAL/NUMERIC | decimal | Precision and scale preserved |
-| REAL | float | Single precision |
-| DOUBLE PRECISION | double | Double precision |
-| BOOLEAN | boolean | True/False values |
-| VARCHAR/TEXT | string | Variable length string |
-| CHAR | string | Fixed length string |
-| DATE | date | Date without time |
-| TIME | time | Time without date |
-| TIMESTAMP | timestamp | Timestamp without timezone |
-| TIMESTAMPTZ | timestamp | Timestamp with timezone |
-| UUID | string | UUID as string |
-| JSON/JSONB | object | JSON-like structure |
-| ARRAY | array | Array of values |
-| BYTEA | binary | Binary data |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>PostgreSQL Type</TableHead>
+      <TableHead>Xether AI Type</TableHead>
+      <TableHead>Notes</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-mono">INTEGER</TableCell>
+      <TableCell className="font-mono">integer</TableCell>
+      <TableCell>32-bit integer</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">BIGINT</TableCell>
+      <TableCell className="font-mono">long</TableCell>
+      <TableCell>64-bit integer</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">SMALLINT</TableCell>
+      <TableCell className="font-mono">short</TableCell>
+      <TableCell>16-bit integer</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">DECIMAL/NUMERIC</TableCell>
+      <TableCell className="font-mono">decimal</TableCell>
+      <TableCell>Precision and scale preserved</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">REAL</TableCell>
+      <TableCell className="font-mono">float</TableCell>
+      <TableCell>Single precision</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">DOUBLE PRECISION</TableCell>
+      <TableCell className="font-mono">double</TableCell>
+      <TableCell>Double precision</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">BOOLEAN</TableCell>
+      <TableCell className="font-mono">boolean</TableCell>
+      <TableCell>True/False values</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">VARCHAR/TEXT</TableCell>
+      <TableCell className="font-mono">string</TableCell>
+      <TableCell>Variable length string</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">CHAR</TableCell>
+      <TableCell className="font-mono">string</TableCell>
+      <TableCell>Fixed length string</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">DATE</TableCell>
+      <TableCell className="font-mono">date</TableCell>
+      <TableCell>Date without time</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">TIME</TableCell>
+      <TableCell className="font-mono">time</TableCell>
+      <TableCell>Time without date</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">TIMESTAMP</TableCell>
+      <TableCell className="font-mono">timestamp</TableCell>
+      <TableCell>Timestamp without timezone</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">TIMESTAMPTZ</TableCell>
+      <TableCell className="font-mono">timestamp</TableCell>
+      <TableCell>Timestamp with timezone</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">UUID</TableCell>
+      <TableCell className="font-mono">string</TableCell>
+      <TableCell>UUID as string</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">JSON/JSONB</TableCell>
+      <TableCell className="font-mono">object</TableCell>
+      <TableCell>JSON-like structure</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">ARRAY</TableCell>
+      <TableCell className="font-mono">array</TableCell>
+      <TableCell>Array of values</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">BYTEA</TableCell>
+      <TableCell className="font-mono">binary</TableCell>
+      <TableCell>Binary data</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 ## Schema Evolution
 
