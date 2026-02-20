@@ -31,8 +31,8 @@ interface MDXTableCellProps {
 
 export function MDXTable({ children, className }: MDXTableProps) {
   return (
-    <div className="my-4 w-full overflow-x-auto rounded-lg border border-border">
-      <table className={cn("w-full text-sm border-collapse", className)}>
+    <div className={`relative w-full overflow-auto rounded-lg border bg-background text-sm shadow-sm ${className || ''}`}>
+      <table className={`w-full caption-bottom text-sm ${className || ''}`}>
         {children}
       </table>
     </div>
@@ -41,7 +41,7 @@ export function MDXTable({ children, className }: MDXTableProps) {
 
 export function MDXTableHeader({ children, className }: MDXTableHeaderProps) {
   return (
-    <thead className={cn("border-b border-border bg-muted", className)}>
+    <thead className={`[&_tr]:border-b ${className || ''}`}>
       {children}
     </thead>
   );
@@ -49,7 +49,7 @@ export function MDXTableHeader({ children, className }: MDXTableHeaderProps) {
 
 export function MDXTableBody({ children, className }: MDXTableBodyProps) {
   return (
-    <tbody className={cn("[&_tr:last-child]:border-0 [&_tr:hover]:bg-muted/50 [&_tr]:transition-colors [&_tr]:border-b", className)}>
+    <tbody className={`[&_tr:last-child]:border-0 ${className || ''}`}>
       {children}
     </tbody>
   );
@@ -57,11 +57,10 @@ export function MDXTableBody({ children, className }: MDXTableBodyProps) {
 
 export function MDXTableRow({ children, className, isFirst }: MDXTableRowProps) {
   return (
-    <tr className={cn(
-      "border-b border-border transition-colors hover:bg-muted/50",
-      isFirst && "font-medium text-primary bg-muted/50",
-      className
-    )}>
+    <tr 
+      className={`border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${isFirst ? 'font-medium' : ''} ${className || ''}`}
+      data-state={isFirst ? "selected" : undefined}
+    >
       {children}
     </tr>
   );
@@ -72,12 +71,11 @@ export function MDXTableCell({ children, className, isHeader, isFirst }: MDXTabl
   
   return (
     <Component 
-      className={cn(
-        "px-4 py-3 align-middle",
-        isFirst && "font-medium text-primary bg-muted/50",
-        "[&:has([role=checkbox])]:pr-0",
-        className
-      )}
+      className={`h-12 px-4 align-middle [&:has([role=checkbox])]:pr-0 ${isFirst ? 'font-medium text-foreground' : ''} ${className || ''}`}
+      style={{
+        borderBottomWidth: isHeader ? '2px' : '1px',
+        borderColor: 'var(--border)',
+      }}
     >
       {children}
     </Component>
@@ -86,11 +84,26 @@ export function MDXTableCell({ children, className, isHeader, isFirst }: MDXTabl
 
 export function MDXTableHead({ children, className }: MDXTableCellProps) {
   return (
-    <th className={cn(
-      "px-4 py-3 text-left font-semibold bg-muted",
-      className
-    )}>
+    <th 
+      className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground [&[align=center]:text-center [&[align=right]:text-right] ${className || ''}`}
+      style={{
+        borderBottomWidth: '2px',
+        borderColor: 'var(--border)',
+      }}
+    >
       {children}
     </th>
+  );
+}
+
+export function MDXTableCaption({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLTableCaptionElement>) {
+  return (
+    <caption
+      className={`mt-4 text-sm text-muted-foreground ${className || ''}`}
+      {...props}
+    />
   );
 }
