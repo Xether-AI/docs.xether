@@ -1,0 +1,568 @@
+---
+title: "Synthetic Data Generation Tutorial"
+description: "Learn how to generate realistic synthetic data for testing and development"
+published: true
+---
+
+# Synthetic Data Generation Tutorial
+
+Synthetic data generation is essential for testing, development, and privacy-preserving data sharing. This tutorial teaches you how to create realistic synthetic data using Xether AI.
+
+## What You'll Learn
+
+- Why synthetic data is important
+- Different synthetic data generation techniques
+- How to configure synthetic data pipelines
+- Best practices for synthetic data quality
+- Privacy considerations
+
+## Prerequisites
+
+- Completed [Your First Pipeline](/docs/tutorials/first-pipeline) tutorial
+- Understanding of basic pipeline concepts
+- Sample dataset (provided below)
+
+## Why Use Synthetic Data?
+
+### Benefits
+
+1. **Privacy Protection**: No real customer data exposed
+2. **Unlimited Supply**: Generate as much data as needed
+3. **Edge Cases**: Create rare scenarios for testing
+4. **Development**: Test applications without production data
+5. **Compliance**: Meet GDPR and other privacy regulations
+
+### Use Cases
+
+- **Application Testing**: Test with realistic data patterns
+- **Machine Learning**: Train models without privacy concerns
+- **Performance Testing**: Generate large datasets for load testing
+- **Data Sharing**: Share data with partners safely
+- **Documentation**: Create example datasets
+
+## Sample Dataset
+
+Let's start with a customer dataset:
+
+```csv:customer_sample.csv
+id,name,email,age,city,salary,credit_score
+1,John Smith,john.smith@email.com,28,New York,75000,720
+2,Jane Doe,jane.doe@email.com,34,Los Angeles,82000,780
+3,Bob Johnson,bob.johnson@email.com,45,Chicago,95000,690
+4,Alice Williams,alice.williams@email.com,29,Houston,68000,750
+5,Charlie Brown,charlie.brown@email.com,38,Boston,72000,710
+```
+
+## Step 1: Basic Synthetic Data Generation
+
+### 1.1 Simple Pipeline
+
+```yaml:synthetic-basic.yaml
+name: "Basic Synthetic Data Generation"
+version: "1.0"
+description: "Generate synthetic customer data"
+
+stages:
+  - name: "ingest-sample-data"
+    type: "ingestion"
+    config:
+      source:
+        type: "file"
+        format: "csv"
+        path: "customer_sample.csv"
+      output:
+        dataset: "customer_sample"
+  
+  - name: "generate-synthetic-data"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "customer_sample"
+      output:
+        dataset: "synthetic_customers"
+      config:
+        num_samples: 1000
+        preserve_schema: true
+        noise_factor: 0.1
+```
+
+### 1.2 Run Basic Pipeline
+
+```bash
+# Using CLI
+xether pipeline run synthetic-basic.yaml
+
+# Using Python SDK
+from xether import Client
+client = Client(api_key="your-api-key")
+pipeline = client.pipelines.load("synthetic-basic.yaml")
+result = pipeline.run()
+```
+
+## Step 2: Advanced Configuration
+
+### 2.1 Column-Specific Generation
+
+```yaml:synthetic-advanced.yaml
+stages:
+  # ... ingestion stage ...
+  
+  - name: "generate-advanced-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "customer_sample"
+      output:
+        dataset: "advanced_synthetic"
+      config:
+        num_samples: 1000
+        preserve_schema: true
+        noise_factor: 0.1
+        
+        # Column-specific generation rules
+        column_config:
+          id:
+            type: "sequential"
+            start: 1000
+            step: 1
+          
+          name:
+            type: "categorical"
+            method: "weighted_sample"
+            weights:
+              "John": 0.3
+              "Jane": 0.25
+              "Bob": 0.2
+              "Alice": 0.15
+              "Charlie": 0.1
+          
+          email:
+            type: "pattern"
+            pattern: "{first}.{last}@{domain}"
+            domains: ["gmail.com", "yahoo.com", "hotmail.com", "company.com"]
+          
+          age:
+            type: "normal"
+            mean: 35
+            std_dev: 10
+            min: 18
+            max: 80
+          
+          city:
+            type: "categorical"
+            method: "uniform"
+            values: ["New York", "Los Angeles", "Chicago", "Houston", "Boston"]
+          
+          salary:
+            type: "lognormal"
+            mean: 11.0  # log scale
+            std_dev: 0.5
+            min: 30000
+            max: 200000
+          
+          credit_score:
+            type: "normal"
+            mean: 700
+            std_dev: 50
+            min: 300
+            max: 850
+```
+
+### 2.2 Correlation Preservation
+
+```yaml:synthetic-correlated.yaml
+stages:
+  # ... ingestion stage ...
+  
+  - name: "generate-correlated-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "customer_sample"
+      output:
+        dataset: "correlated_synthetic"
+      config:
+        num_samples: 1000
+        preserve_schema: true
+        
+        # Preserve correlations between columns
+        correlation_method: "copula"
+        preserve_correlations: true
+        
+        # Define correlated pairs
+        correlations:
+          - columns: ["age", "salary"]
+            correlation: 0.3  # Positive correlation
+          - columns: ["salary", "credit_score"]
+            correlation: 0.4
+          - columns: ["age", "credit_score"]
+            correlation: -0.1  # Slight negative correlation
+```
+
+## Step 3: Privacy-Preserving Generation
+
+### 3.1 Differential Privacy
+
+```yaml:synthetic-private.yaml
+stages:
+  # ... ingestion stage ...
+  
+  - name: "generate-private-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "customer_sample"
+      output:
+        dataset: "private_synthetic"
+      config:
+        num_samples: 1000
+        preserve_schema: true
+        
+        # Privacy settings
+        privacy:
+          enabled: true
+          epsilon: 1.0  # Privacy budget
+          delta: 1e-6   # Failure probability
+          
+        # Sensitive columns
+        sensitive_columns:
+          - "email"
+          - "name"
+        
+        # Anonymization for sensitive data
+        anonymization:
+          name:
+            type: "fake_name"
+            locale: "en_US"
+          email:
+            type: "fake_email"
+            domain: "example.com"
+```
+
+### 3.2 k-Anonymity
+
+```yaml:synthetic-kanonymous.yaml
+stages:
+  # ... ingestion stage ...
+  
+  - name: "generate-kanonymous-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "customer_sample"
+      output:
+        dataset: "kanonymous_synthetic"
+      config:
+        num_samples: 1000
+        preserve_schema: true
+        
+        # k-anonymity settings
+        kanonymity:
+          enabled: true
+          k: 5  # Each record must be indistinguishable from at least 5 others
+          quasi_identifiers:
+            - "age"
+            - "city"
+            - "salary"
+```
+
+## Step 4: Quality Validation
+
+### 4.1 Statistical Similarity Check
+
+```yaml:synthetic-validation.yaml
+stages:
+  # ... generation stages ...
+  
+  - name: "validate-synthetic-quality"
+    type: "validation"
+    config:
+      input:
+        dataset: "synthetic_customers"
+      reference_dataset: "customer_sample"
+      
+      # Quality metrics
+      quality_checks:
+        - type: "statistical_similarity"
+          metrics: ["mean", "std", "correlation", "distribution"]
+          threshold: 0.9
+        
+        - type: "privacy_check"
+          metrics: ["k_anonymity", "l_diversity", "t_closeness"]
+          thresholds:
+            k_anonymity: 5
+            l_diversity: 3
+            t_closeness: 0.2
+        
+        - type: "data_quality"
+          checks: ["completeness", "uniqueness", "validity"]
+      
+      output:
+        dataset: "validated_synthetic"
+        quality_report: "synthetic_quality_report.json"
+```
+
+### 4.2 Visual Quality Assessment
+
+```python
+# Python script to visualize synthetic data quality
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+def compare_distributions(original_df, synthetic_df, columns):
+    """Compare distributions between original and synthetic data"""
+    
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    axes = axes.ravel()
+    
+    for i, column in enumerate(columns):
+        if i < len(axes):
+            ax = axes[i]
+            
+            # Plot original data
+            sns.histplot(original_df[column], ax=ax, alpha=0.7, 
+                       label='Original', color='blue', kde=True)
+            
+            # Plot synthetic data
+            sns.histplot(synthetic_df[column], ax=ax, alpha=0.7, 
+                       label='Synthetic', color='red', kde=True)
+            
+            ax.set_title(f'{column} Distribution')
+            ax.legend()
+    
+    plt.tight_layout()
+    plt.show()
+
+# Usage
+original_df = pd.read_csv('customer_sample.csv')
+synthetic_df = pd.read_csv('synthetic_customers.csv')
+compare_distributions(original_df, synthetic_df, ['age', 'salary', 'credit_score'])
+```
+
+## Step 5: Specialized Synthetic Data
+
+### 5.1 Time Series Data
+
+```yaml:synthetic-timeseries.yaml
+stages:
+  - name: "generate-timeseries-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "time_series_sample"
+      output:
+        dataset: "synthetic_timeseries"
+      config:
+        num_samples: 1000
+        time_series:
+          enabled: true
+          timestamp_column: "date"
+          value_column: "value"
+          
+          # Time series characteristics
+          seasonality:
+            enabled: true
+            periods: [7, 30, 365]  # Weekly, monthly, yearly
+          
+          trend:
+            enabled: true
+            slope: 0.1  # Upward trend
+          
+          noise:
+            type: "gaussian"
+            std_dev: 0.1
+```
+
+### 5.2 Text Data
+
+```yaml:synthetic-text.yaml
+stages:
+  - name: "generate-text-synthetic"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "text_sample"
+      output:
+        dataset: "synthetic_text"
+      config:
+        num_samples: 1000
+        text_columns:
+          - "description"
+          - "comments"
+        
+        text_generation:
+          model: "gpt"  # or "bert", "t5"
+          style: "professional"
+          length:
+            min: 50
+            max: 500
+          
+          # Preserve domain-specific vocabulary
+          domain_vocabulary:
+            - "pipeline"
+            - "dataset"
+            - "validation"
+            - "transformation"
+```
+
+## Step 6: Integration with ML Pipelines
+
+### 6.1 Training Data Generation
+
+```yaml:synthetic-ml-training.yaml
+stages:
+  # ... data generation ...
+  
+  - name: "prepare-training-data"
+    type: "preprocessing"
+    config:
+      input:
+        dataset: "synthetic_customers"
+      operations:
+        - type: "feature_engineering"
+          features:
+            - name: "age_group"
+              type: "binning"
+              column: "age"
+              bins: [18, 30, 45, 60, 80]
+            - name: "salary_category"
+              type: "categorical"
+              column: "salary"
+              categories: ["low", "medium", "high"]
+      
+      output:
+        dataset: "training_ready"
+```
+
+### 6.2 Test Data Generation
+
+```yaml:synthetic-test.yaml
+stages:
+  # ... training data generation ...
+  
+  - name: "generate-test-scenarios"
+    type: "synthetic"
+    config:
+      input:
+        dataset: "training_ready"
+      output:
+        dataset: "test_scenarios"
+      config:
+        num_samples: 200
+        
+        # Generate specific test scenarios
+        scenarios:
+          - name: "edge_cases"
+            type: "extreme_values"
+            columns: ["age", "salary"]
+            probability: 0.1
+          
+          - name: "missing_data"
+            type: "missing_values"
+            columns: ["email", "city"]
+            probability: 0.05
+          
+          - name: "data_drift"
+            type: "distribution_shift"
+            columns: ["salary"]
+            shift_factor: 1.2
+```
+
+## Best Practices
+
+### 1. Data Quality
+
+- Always validate synthetic data against original
+- Check statistical distributions
+- Verify correlations are preserved
+- Test with downstream applications
+
+### 2. Privacy Protection
+
+- Use differential privacy for sensitive data
+- Implement k-anonymity when needed
+- Remove or anonymize direct identifiers
+- Regularly audit privacy guarantees
+
+### 3. Realism
+
+- Preserve data relationships and correlations
+- Include realistic edge cases
+- Maintain domain-specific patterns
+- Validate with subject matter experts
+
+### 4. Documentation
+
+- Document generation parameters
+- Track quality metrics
+- Record privacy settings
+- Share generation methodology
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: "Synthetic data doesn't look realistic"
+- **Solution**: Adjust noise factors, use correlation preservation
+
+**Issue**: "Privacy guarantees too weak"
+- **Solution**: Reduce epsilon, increase k-anonymity value
+
+**Issue**: "Generation is too slow"
+- **Solution**: Reduce sample size, use simpler generation methods
+
+**Issue**: "Downstream models perform poorly"
+- **Solution**: Improve data quality, adjust generation parameters
+
+## Advanced Techniques
+
+### 1. Generative Adversarial Networks (GANs)
+
+```yaml:synthetic-gan.yaml
+stages:
+  - name: "generate-gan-synthetic"
+    type: "synthetic"
+    config:
+      method: "gan"
+      model:
+        type: "tabular_gan"
+        epochs: 1000
+        batch_size: 32
+      output:
+        dataset: "gan_synthetic"
+```
+
+### 2. Variational Autoencoders (VAEs)
+
+```yaml:synthetic-vae.yaml
+stages:
+  - name: "generate-vae-synthetic"
+    type: "synthetic"
+    config:
+      method: "vae"
+      model:
+        latent_dim: 16
+        hidden_layers: [64, 32]
+        epochs: 500
+      output:
+        dataset: "vae_synthetic"
+```
+
+## Next Steps
+
+1. **Automate Quality Monitoring**: Set up continuous synthetic data quality checks
+2. **Create Generation Templates**: Build reusable synthetic data pipelines
+3. **Implement A/B Testing**: Compare synthetic vs real data performance
+4. **Explore Advanced Models**: Try GANs and VAEs for complex data
+
+## Additional Resources
+
+- [Synthetic Data Best Practices](/docs/ml-services/synthetic-generation)
+- [Privacy Documentation](/docs/architecture/security)
+- [ML Services API](/docs/api-reference)
+- [Data Quality Metrics](/docs/datasets/metadata)
+
+---
+
+**Happy generating! 🎲**
