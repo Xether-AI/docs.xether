@@ -6,7 +6,10 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "analyze": "ANALYZE=true next build",
+    "lighthouse": "lhci autorun",
+    "perf": "npm run build && npm run lighthouse"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

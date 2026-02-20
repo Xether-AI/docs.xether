@@ -47,10 +47,12 @@ export function DocsLayout({ children }: DocsLayoutProps) {
 
         <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">
           {/* Sidebar */}
-          <DocsSidebar />
+          <aside aria-label="Documentation navigation">
+            <DocsSidebar />
+          </aside>
 
           {/* Main content */}
-          <main className="relative py-8 min-w-0">
+          <main id="main-content" className="relative py-8 min-w-0" role="main" aria-label="Main content">
             <Breadcrumbs />
             <article className="prose-doc max-w-none">{children}</article>
 
@@ -65,11 +67,11 @@ export function DocsLayout({ children }: DocsLayoutProps) {
           </main>
 
           {/* Right TOC column — rendered per-page via layout slot */}
-          <div className="hidden lg:block">
+          <aside className="hidden lg:block" aria-label="Table of contents">
             <div className="sticky top-20 py-8">
               {/* TOC is injected per-page */}
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </>
