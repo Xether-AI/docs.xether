@@ -100,7 +100,7 @@ export default async function ChangelogPage({ searchParams }: PageProps) {
                   
                   return (
                     <div key={changeIndex} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <Badge className={config.color}>
                           <Icon className="h-3 w-3 mr-1" />
                           {config.label}

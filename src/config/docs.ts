@@ -13,6 +13,9 @@ export const docsConfig = {
                 { title: "Quickstart", href: "/docs/getting-started/quickstart" },
                 { title: "Installation", href: "/docs/getting-started/installation" },
                 { title: "Core Concepts", href: "/docs/getting-started/core-concepts" },
+                { title: "First Pipeline Tutorial", href: "/docs/tutorials/first-pipeline" },
+                { title: "Data Cleaning Tutorial", href: "/docs/tutorials/data-cleaning" },
+                { title: "Synthetic Data Tutorial", href: "/docs/tutorials/synthetic-data" },
             ],
         },
         {
@@ -78,6 +81,8 @@ export const docsConfig = {
         {
             title: "Resources",
             items: [
+                { title: "Tutorials", href: "/docs/tutorials" },
+                { title: "How-To Guides", href: "/docs/how-to" },
                 { title: "Changelog", href: "/docs/changelog" },
                 { title: "API Status", href: "https://status.xether.ai" },
             ],
