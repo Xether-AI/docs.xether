@@ -9,17 +9,18 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#78fcd6",
-    icons: [
-      {
-        src: "/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        src: "/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
-    ],
+    // Note: Add icon files (icon-192.png, icon-512.png) to /public folder
+    // icons: [
+    //   {
+    //     src: "/icon-192.png",
+    //     sizes: "192x192",
+    //     type: "image/png",
+    //   },
+    //   {
+    //     src: "/icon-512.png",
+    //     sizes: "512x512",
+    //     type: "image/png",
+    //   },
+    // ],
   };
 }

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { APIClient, OpenAPISpec } from "@/lib/api-client";
 import { APIReferenceGenerator, APIReferenceData } from "@/lib/api-reference-generator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/shadcn-card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Server } from "lucide-react";
 import { APIVersionSelector } from "@/components/APIVersionSelector";

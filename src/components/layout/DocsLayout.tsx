@@ -8,6 +8,8 @@ import { VersionSelector } from "./VersionSelector";
 import { DeprecationNotice } from "./DeprecationNotice";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { EditOnGitHub } from "@/components/feedback/EditOnGitHub";
+import { TableOfContents } from "@/components/ui/TableOfContents";
+import { useTableOfContents } from "@/hooks/useTableOfContents";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,7 @@ interface DocsLayoutProps {
 
 export function DocsLayout({ children }: DocsLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const tocItems = useTableOfContents();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -40,9 +43,6 @@ export function DocsLayout({ children }: DocsLayoutProps) {
         {/* Version selector and page header */}
         <div className="flex items-center justify-between py-4 border-b mb-6" style={{ borderColor: "var(--border)" }}>
           <VersionSelector />
-          <div className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleDateString()}
-          </div>
         </div>
 
         <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">
@@ -66,10 +66,10 @@ export function DocsLayout({ children }: DocsLayoutProps) {
             <EditOnGitHub />
           </main>
 
-          {/* Right TOC column — rendered per-page via layout slot */}
+          {/* Right TOC column */}
           <aside className="hidden lg:block" aria-label="Table of contents">
             <div className="sticky top-20 py-8">
-              {/* TOC is injected per-page */}
+              <TableOfContents items={tocItems} />
             </div>
           </aside>
         </div>
