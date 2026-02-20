@@ -19,6 +19,7 @@ export const docsConfig = {
             title: "API Reference",
             items: [
                 { title: "Overview", href: "/docs/api-reference/overview" },
+                { title: "Interactive API", href: "/docs/api-reference" },
                 { title: "Authentication", href: "/docs/api-reference/authentication" },
                 { title: "Datasets", href: "/docs/api-reference/datasets" },
                 { title: "Pipelines", href: "/docs/api-reference/pipelines" },
@@ -72,6 +73,13 @@ export const docsConfig = {
                 { title: "Python SDK", href: "/docs/sdk/python" },
                 { title: "JavaScript SDK", href: "/docs/sdk/javascript" },
                 { title: "Go SDK", href: "/docs/sdk/go" },
+            ],
+        },
+        {
+            title: "Resources",
+            items: [
+                { title: "Changelog", href: "/docs/changelog" },
+                { title: "API Status", href: "https://status.xether.ai" },
             ],
         },
     ],

@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { APIClient, OpenAPISpec } from "@/lib/api-client";
 import { APIReferenceGenerator, APIReferenceData } from "@/lib/api-reference-generator";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/shadcn-card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Server, Code } from "lucide-react";
+import { BookOpen, Server } from "lucide-react";
+import { APIVersionSelector } from "@/components/APIVersionSelector";
 
 interface PageProps {
   searchParams: Promise<{
@@ -32,9 +33,12 @@ export default async function APIReferencePage({ searchParams }: PageProps) {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-6 w-6" />
-          <h1 className="text-3xl font-bold">API Reference</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-6 w-6" />
+            <h1 className="text-3xl font-bold">API Reference</h1>
+          </div>
+          <APIVersionSelector />
         </div>
         
         <div className="space-y-2">
