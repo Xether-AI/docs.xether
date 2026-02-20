@@ -396,12 +396,42 @@ stages:
 
 ### Algorithm Selection Guide
 
-| Dataset Size | Dimensions | Recommended Algorithm | Reason |
-|--------------|------------|----------------------|---------|
-| < 10K rows | < 10 | Z-Score, IQR | Fast, simple |
-| 10K-1M rows | 10-50 | Isolation Forest | Efficient, accurate |
-| 1M-10M rows | 50-100 | Isolation Forest, LOF | Scalable |
-| > 10M rows | > 100 | Autoencoder, Ensemble | Complex patterns |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Dataset Size</TableHead>
+      <TableHead>Dimensions</TableHead>
+      <TableHead>Recommended Algorithm</TableHead>
+      <TableHead>Reason</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>&lt; 10K rows</TableCell>
+      <TableCell>&lt; 10</TableCell>
+      <TableCell>Z-Score, IQR</TableCell>
+      <TableCell>Fast, simple</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>10K-1M rows</TableCell>
+      <TableCell>10-50</TableCell>
+      <TableCell>Isolation Forest</TableCell>
+      <TableCell>Efficient, accurate</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>1M-10M rows</TableCell>
+      <TableCell>50-100</TableCell>
+      <TableCell>Isolation Forest, LOF</TableCell>
+      <TableCell>Scalable</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>&gt; 10M rows</TableCell>
+      <TableCell>&gt; 100</TableCell>
+      <TableCell>Autoencoder, Ensemble</TableCell>
+      <TableCell>Complex patterns</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 ### Optimization Tips
 
