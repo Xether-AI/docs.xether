@@ -27,15 +27,15 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm flex items-center justify-center">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm flex items-center justify-center" role="banner">
         <div className="container flex h-14 items-center justify-between px-4 w-full">
           <div className="flex items-center justify-center gap-6">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2" aria-label="Xether AI Home">
               <span className="font-bold text-lg tracking-tight">
                 Xether <span className="text-primary">AI</span>
               </span>
             </Link>
-            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium" aria-label="Main navigation">
               <Link
                 href="/docs/getting-started/introduction"
                 className="hover:text-primary transition-colors"
@@ -65,7 +65,7 @@ export function SiteHeader() {
             <button
               onClick={() => setIsSearchOpen(true)}
               className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
-              aria-label="Search"
+              aria-label="Open search"
             >
               <SearchIcon className="h-4 w-4" />
             </button>
@@ -84,7 +84,12 @@ export function SiteHeader() {
 
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm md:hidden">
+        <div 
+          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search dialog"
+        >
           <div className="container mx-auto px-4 pt-20">
             <SearchInput
               className="w-full"
@@ -94,6 +99,7 @@ export function SiteHeader() {
             <button
               onClick={() => setIsSearchOpen(false)}
               className="mt-4 text-sm text-muted-foreground hover:text-foreground"
+              aria-label="Close search"
             >
               Press Escape to close
             </button>
