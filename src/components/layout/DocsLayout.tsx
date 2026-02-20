@@ -8,6 +8,8 @@ import { VersionSelector } from "./VersionSelector";
 import { DeprecationNotice } from "./DeprecationNotice";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { EditOnGitHub } from "@/components/feedback/EditOnGitHub";
+import { TableOfContents } from "@/components/ui/TableOfContents";
+import { useTableOfContents } from "@/hooks/useTableOfContents";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,7 @@ interface DocsLayoutProps {
 
 export function DocsLayout({ children }: DocsLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const tocItems = useTableOfContents();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -63,10 +66,10 @@ export function DocsLayout({ children }: DocsLayoutProps) {
             <EditOnGitHub />
           </main>
 
-          {/* Right TOC column — rendered per-page via layout slot */}
+          {/* Right TOC column */}
           <aside className="hidden lg:block" aria-label="Table of contents">
             <div className="sticky top-20 py-8">
-              {/* TOC is injected per-page */}
+              <TableOfContents items={tocItems} />
             </div>
           </aside>
         </div>
