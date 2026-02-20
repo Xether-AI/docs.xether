@@ -40,9 +40,6 @@ export function DocsLayout({ children }: DocsLayoutProps) {
         {/* Version selector and page header */}
         <div className="flex items-center justify-between py-4 border-b mb-6" style={{ borderColor: "var(--border)" }}>
           <VersionSelector />
-          <div className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleDateString()}
-          </div>
         </div>
 
         <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">

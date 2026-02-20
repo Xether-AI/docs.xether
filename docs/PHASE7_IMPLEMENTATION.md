@@ -219,6 +219,20 @@ Phase 7 implementation provides:
 - **Production Ready**: Performance monitoring and optimization
 - **Future Proof**: PWA-ready with manifest
 
+## Known Issues / TODO
+
+### Icons
+The PWA manifest references icon files that need to be created:
+- `public/icon-192.png` (192x192px)
+- `public/icon-512.png` (512x512px)
+
+See `docs/ICONS_TODO.md` for detailed specifications and design guidelines. Icons are currently commented out in the manifest to prevent 404 errors.
+
+### Optional Enhancements
+- Add favicon.ico for browser tab icon
+- Add apple-touch-icon.png for iOS home screen
+- Consider adding more icon sizes for different devices
+
 ## Resources
 
 - [Next.js Metadata Documentation](https://nextjs.org/docs/app/building-your-application/optimizing/metadata)
