@@ -2,6 +2,14 @@ import type { MDXComponents } from "mdx/types";
 import { Callout } from "@/components/ui/Callout";
 import { Card, Cards } from "@/components/ui/Card";
 import { CodeBlock } from "@/components/ui/CodeBlock";
+import { 
+  MDXTable, 
+  MDXTableHeader, 
+  MDXTableBody, 
+  MDXTableRow, 
+  MDXTableCell, 
+  MDXTableHead 
+} from "@/components/ui/MDXTable";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
@@ -10,6 +18,12 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     Card,
     Cards,
     CodeBlock,
+    MDXTable,
+    MDXTableHeader,
+    MDXTableBody,
+    MDXTableRow,
+    MDXTableCell,
+    MDXTableHead,
 
     // Override default HTML elements for consistent styling
     h1: ({ children, ...props }) => (
@@ -126,41 +140,34 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       </pre>
     ),
     table: ({ children, ...props }) => (
-      <div
-        className="my-4 w-full overflow-x-auto rounded-lg border"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <table className="w-full text-sm" {...props}>
+      <div className="my-4 w-full overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-sm border-collapse" {...props}>
           {children}
         </table>
       </div>
     ),
     thead: ({ children, ...props }) => (
-      <thead style={{ background: "rgba(120,252,214,0.05)" }} {...props}>
+      <thead className="border-b border-border bg-muted" {...props}>
         {children}
       </thead>
     ),
+    tbody: ({ children, ...props }) => (
+      <tbody className="[&_tr:last-child]:border-0 [&_tr:hover]:bg-muted/50 [&_tr]:transition-colors [&_tr]:border-b" {...props}>
+        {children}
+      </tbody>
+    ),
+    tr: ({ children, ...props }) => (
+      <tr className="border-b border-border transition-colors hover:bg-muted/50" {...props}>
+        {children}
+      </tr>
+    ),
     th: ({ children, ...props }) => (
-      <th
-        className="px-4 py-3 text-left font-semibold"
-        style={{
-          color: "var(--foreground)",
-          borderBottom: "1px solid var(--border)",
-        }}
-        {...props}
-      >
+      <th className="px-4 py-3 text-left font-semibold" {...props}>
         {children}
       </th>
     ),
     td: ({ children, ...props }) => (
-      <td
-        className="px-4 py-3"
-        style={{
-          color: "var(--foreground)",
-          borderBottom: "1px solid var(--border)",
-        }}
-        {...props}
-      >
+      <td className="px-4 py-3 [&:has([role=checkbox])]:pr-0" {...props}>
         {children}
       </td>
     ),

@@ -44,9 +44,9 @@ export function TableOfContents({ items }: TableOfContentsProps) {
       >
         On This Page
       </p>
-      {items.map((item) => (
+      {items.map((item, index) => (
         <a
-          key={item.id}
+          key={`${item.id}-${index}`}
           href={`#${item.id}`}
           className={cn(
             "block py-1 text-sm transition-colors",

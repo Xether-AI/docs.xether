@@ -18,7 +18,7 @@ export function VersionSelector() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md",
+          "flex items-center justify-end gap-1 px-8 py-1.5 text-sm rounded-md",
           "border transition-colors",
           "hover:bg-accent/10 hover:border-primary/50",
           "focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -31,7 +31,7 @@ export function VersionSelector() {
       >
         <span className="font-medium">{currentVersion.label}</span>
         {currentVersion.deprecated && (
-          <AlertTriangle className="h-3 w-3 text-amber-500" />
+          <AlertTriangle className="h-3 w-3 text-amber-400" />
         )}
         <ChevronDown 
           className={cn(
@@ -45,14 +45,14 @@ export function VersionSelector() {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-10" 
+            className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown */}
           <div className={cn(
-            "absolute top-full left-0 mt-1 min-w-[250px]",
-            "bg-background/95 backdrop-blur-sm border rounded-md shadow-lg z-20",
+            "absolute top-full left-0 mt-1 min-w-[220px]",
+            "bg-background/95 backdrop-blur-md border rounded-md shadow-lg z-20",
             "py-1"
           )} style={{ borderColor: "var(--border)" }}>
             {versions.map((version) => (
@@ -65,8 +65,8 @@ export function VersionSelector() {
                   router.push(currentPath);
                 }}
                 className={cn(
-                  "w-full px-3 py-2 text-left text-sm cursor-pointer",
-                  "hover:bg-accent/10 transition-colors flex items-center justify-between",
+                  "w-full px-3 py-2 text-left text-sm cursor-pointer flex items-center justify-between",
+                  "hover:bg-accent/10 transition-colors",
                   version.current && "text-primary font-medium",
                   version.deprecated && "text-muted-foreground"
                 )}
@@ -77,14 +77,14 @@ export function VersionSelector() {
                     <AlertTriangle className="h-3 w-3 text-amber-500" />
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-xs ">
                   {version.current && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground">
                       (current)
                     </span>
                   )}
                   {version.stable && !version.current && (
-                    <span className="text-xs text-green-600">
+                    <span className="text-green-600">
                       (stable)
                     </span>
                   )}

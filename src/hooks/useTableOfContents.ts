@@ -17,14 +17,14 @@ export function useTableOfContents() {
         "#main-content h2, #main-content h3"
       );
 
-      const tocItems: TocItem[] = Array.from(headings).map((heading) => {
+      const tocItems: TocItem[] = Array.from(headings).map((heading, index) => {
         // Ensure heading has an ID
         if (!heading.id) {
-          const id = heading.textContent
+          const baseId = heading.textContent
             ?.toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "") || "";
-          heading.id = id;
+          heading.id = `${baseId}-${index}`;
         }
 
         return {
