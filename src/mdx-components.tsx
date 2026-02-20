@@ -3,14 +3,13 @@ import { Callout } from "@/components/ui/Callout";
 import { Card, Cards } from "@/components/ui/Card";
 import { CodeBlock } from "@/components/ui/CodeBlock";
 import { 
-  Table, 
-  TableHeader, 
-  TableBody, 
-  TableRow, 
-  TableCell, 
-  TableHead, 
-  TableCaption 
-} from "@/components/ui/Table";
+  MDXTable, 
+  MDXTableHeader, 
+  MDXTableBody, 
+  MDXTableRow, 
+  MDXTableCell, 
+  MDXTableHead 
+} from "@/components/ui/MDXTable";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
@@ -19,6 +18,12 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     Card,
     Cards,
     CodeBlock,
+    MDXTable,
+    MDXTableHeader,
+    MDXTableBody,
+    MDXTableRow,
+    MDXTableCell,
+    MDXTableHead,
 
     // Override default HTML elements for consistent styling
     h1: ({ children, ...props }) => (
