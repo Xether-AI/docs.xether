@@ -58,11 +58,28 @@ Errors return a non-2xx status with:
 
 ## Rate Limits
 
-| Plan       | Requests/minute |
-| ---------- | --------------- |
-| Free       | 60              |
-| Pro        | 600             |
-| Enterprise | Unlimited       |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Plan</TableHead>
+      <TableHead>Requests/minute</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>Free</TableCell>
+      <TableCell>60</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Pro</TableCell>
+      <TableCell>600</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Enterprise</TableCell>
+      <TableCell>Unlimited</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 Rate limit headers are included in every response:
 
@@ -74,12 +91,32 @@ X-RateLimit-Reset: 1705312260
 
 ## Endpoints
 
-| Resource                                             | Description                       |
-| ---------------------------------------------------- | --------------------------------- |
-| [Authentication](/docs/api-reference/authentication) | Manage API keys and OAuth tokens  |
-| [Datasets](/docs/api-reference/datasets)             | Create, list, and manage datasets |
-| [Pipelines](/docs/api-reference/pipelines)           | Define and manage pipelines       |
-| [Executions](/docs/api-reference/executions)         | Trigger and monitor pipeline runs |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Resource</TableHead>
+      <TableHead>Description</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell><a href="/docs/api-reference/authentication" className="text-primary hover:underline">Authentication</a></TableCell>
+      <TableCell>Manage API keys and OAuth tokens</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell><a href="/docs/api-reference/datasets" className="text-primary hover:underline">Datasets</a></TableCell>
+      <TableCell>Create, list, and manage datasets</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell><a href="/docs/api-reference/pipelines" className="text-primary hover:underline">Pipelines</a></TableCell>
+      <TableCell>Define and manage pipelines</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell><a href="/docs/api-reference/executions" className="text-primary hover:underline">Executions</a></TableCell>
+      <TableCell>Trigger and monitor pipeline runs</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 ## SDKs
 

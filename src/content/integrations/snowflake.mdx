@@ -265,20 +265,77 @@ config:
 
 ## Data Type Mapping
 
-| Snowflake Type | Xether AI Type | Notes |
-|----------------|----------------|-------|
-| NUMBER | decimal | Precision and scale preserved |
-| INTEGER | integer | 32-bit integer |
-| BIGINT | long | 64-bit integer |
-| FLOAT | double | Double precision |
-| BOOLEAN | boolean | True/False values |
-| VARCHAR | string | Variable length string |
-| DATE | date | Date without time |
-| TIMESTAMP | timestamp | Timestamp with timezone |
-| TIMESTAMP_NTZ | timestamp | Timestamp without timezone |
-| VARIANT | object | JSON-like structure |
-| ARRAY | array | Array of values |
-| OBJECT | object | Key-value pairs |
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Snowflake Type</TableHead>
+      <TableHead>Xether AI Type</TableHead>
+      <TableHead>Notes</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-mono">NUMBER</TableCell>
+      <TableCell className="font-mono">decimal</TableCell>
+      <TableCell>Precision and scale preserved</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">INTEGER</TableCell>
+      <TableCell className="font-mono">integer</TableCell>
+      <TableCell>32-bit integer</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">BIGINT</TableCell>
+      <TableCell className="font-mono">long</TableCell>
+      <TableCell>64-bit integer</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">FLOAT</TableCell>
+      <TableCell className="font-mono">double</TableCell>
+      <TableCell>Double precision</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">BOOLEAN</TableCell>
+      <TableCell className="font-mono">boolean</TableCell>
+      <TableCell>True/False values</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">VARCHAR</TableCell>
+      <TableCell className="font-mono">string</TableCell>
+      <TableCell>Variable length string</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">DATE</TableCell>
+      <TableCell className="font-mono">date</TableCell>
+      <TableCell>Date without time</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">TIMESTAMP</TableCell>
+      <TableCell className="font-mono">timestamp</TableCell>
+      <TableCell>Timestamp with timezone</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">TIMESTAMP_NTZ</TableCell>
+      <TableCell className="font-mono">timestamp</TableCell>
+      <TableCell>Timestamp without timezone</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">VARIANT</TableCell>
+      <TableCell className="font-mono">object</TableCell>
+      <TableCell>JSON-like structure</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">ARRAY</TableCell>
+      <TableCell className="font-mono">array</TableCell>
+      <TableCell>Array of values</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-mono">OBJECT</TableCell>
+      <TableCell className="font-mono">object</TableCell>
+      <TableCell>Key-value pairs</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
 
 ## Schema Evolution
 
