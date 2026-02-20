@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { DocsSidebar } from "./DocsSidebar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { DocNavigation } from "./DocNavigation";
@@ -16,23 +16,7 @@ interface DocsLayoutProps {
 }
 
 export function DocsLayout({ children }: DocsLayoutProps) {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const tocItems = useTableOfContents();
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        setIsSearchOpen(true);
-      }
-      if (event.key === "Escape") {
-        setIsSearchOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   return (
     <>
@@ -45,14 +29,14 @@ export function DocsLayout({ children }: DocsLayoutProps) {
           <VersionSelector />
         </div>
 
-        <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)_220px] lg:gap-10">
-          {/* Sidebar */}
-          <aside aria-label="Documentation navigation">
+        <div className="flex flex-col md:flex-row gap-8 lg:gap-10">
+          {/* Sidebar - Fixed positioning */}
+          <div className="hidden md:block md:w-64 lg:w-65 shrink-0">
             <DocsSidebar />
-          </aside>
+          </div>
 
-          {/* Main content */}
-          <main id="main-content" className="relative py-8 min-w-0" role="main" aria-label="Main content">
+          {/* Main content - Takes remaining space */}
+          <main id="main-content" className="flex-1 relative py-8 min-w-0" role="main" aria-label="Main content">
             <Breadcrumbs />
             <article className="prose-doc max-w-none">{children}</article>
 
@@ -67,7 +51,7 @@ export function DocsLayout({ children }: DocsLayoutProps) {
           </main>
 
           {/* Right TOC column */}
-          <aside className="hidden lg:block" aria-label="Table of contents">
+          <aside className="hidden lg:block w-56 shrink-0" aria-label="Table of contents">
             <div className="sticky top-20 py-8">
               <TableOfContents items={tocItems} />
             </div>

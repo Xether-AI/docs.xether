@@ -12,7 +12,7 @@ export function DocsSidebar() {
   const docsConfig = getDocsConfig(currentVersion?.value);
 
   return (
-    <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 md:sticky md:block">
+    <aside className="fixed top-14 left-0 z-30 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 md:sticky md:block md:left-auto">
       <div className="h-full overflow-y-auto py-6 pr-6 lg:py-8">
         <div className="flex flex-col gap-6">
           {docsConfig.sidebarNav.map((item, index) => (
