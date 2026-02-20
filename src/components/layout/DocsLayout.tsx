@@ -25,7 +25,7 @@ export function DocsLayout({ children }: DocsLayoutProps) {
         <DeprecationNotice className="mb-6" />
         
         {/* Version selector and page header */}
-        <div className="flex items-center justify-between py-4 border-b mb-6" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-end py-4 border-b mb-6" style={{ borderColor: "var(--border)" }}>
           <VersionSelector />
         </div>
 
