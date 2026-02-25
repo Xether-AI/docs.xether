@@ -1,0 +1,98 @@
+---
+title: "Service Status"
+description: "Real-time status of Xether AI services and API endpoints"
+---
+
+import { ServiceStatus } from "@/components/ui/ServiceStatus";
+
+# Service Status
+
+This page shows the current status of all Xether AI services, including API endpoints, pipeline execution, data storage, and authentication systems.
+
+<ServiceStatus />
+
+## What the Status Means
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Status</TableHead>
+      <TableHead>Description</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">✅ Operational</TableCell>
+      <TableCell>The service is functioning normally and all features are available.</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">⚠️ Degraded Performance</TableCell>
+      <TableCell>The service is operational but experiencing some issues or reduced performance.</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">❌ Service Outage</TableCell>
+      <TableCell>The service is currently unavailable or experiencing major issues.</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">🔧 Under Maintenance</TableCell>
+      <TableCell>The service is temporarily unavailable for scheduled maintenance.</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+## Incident Response
+
+When incidents occur:
+
+1. **Detection** - Automated monitoring detects issues within seconds
+2. **Assessment** - Engineering team investigates impact and root cause
+3. **Communication** - Status page updated with incident details
+4. **Resolution** - Team works to restore service as quickly as possible
+5. **Post-mortem** - Analysis conducted to prevent future incidents
+
+## Historical Data
+
+For historical uptime data and detailed incident reports, visit our [status archive](https://status.xether.ai/history).
+
+## API Status Endpoints
+
+If you need to programmatically check service status, use our status API:
+
+```bash
+curl https://api.xether.ai/v1/status
+```
+
+Response format:
+```json
+{
+  "status": "operational",
+  "services": [
+    {
+      "name": "API",
+      "status": "operational",
+      "description": "All API endpoints are responding normally",
+      "lastUpdated": "2024-02-25T10:00:00Z"
+    }
+  ],
+  "incident": null
+}
+```
+
+## Get Notified
+
+Subscribe to status updates:
+
+- **Email**: Subscribe at [status.xether.ai](https://status.xether.ai)
+- **RSS Feed**: [status.xether.ai/rss](https://status.xether.ai/rss)
+- **Webhooks**: Configure webhook notifications in your dashboard
+
+## SLA Commitment
+
+We commit to:
+
+- **99.9% Uptime** for core API services
+- **Sub-minute response** to critical incidents
+- **Transparent communication** during service issues
+- **Post-incident analysis** within 48 hours
+
+For service-related questions or to report issues, contact our support team at [support@xether.ai](mailto:support@xether.ai).
