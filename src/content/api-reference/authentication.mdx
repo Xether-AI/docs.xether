@@ -52,31 +52,31 @@ const client = new XetherClient({ apiKey: process.env.XETHER_API_KEY });
   </TableHeader>
   <TableBody>
     <TableRow>
-      <TableCell className="font-mono">datasets:read</TableCell>
+      <TableCell className="font-medium font-mono">datasets:read</TableCell>
       <TableCell>Read dataset metadata and versions</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">datasets:write</TableCell>
+      <TableCell className="font-medium font-mono">datasets:write</TableCell>
       <TableCell>Create and update datasets</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">pipelines:read</TableCell>
+      <TableCell className="font-medium font-mono">pipelines:read</TableCell>
       <TableCell>Read pipeline definitions</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">pipelines:write</TableCell>
+      <TableCell className="font-medium font-mono">pipelines:write</TableCell>
       <TableCell>Create and update pipelines</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">executions:read</TableCell>
+      <TableCell className="font-medium font-mono">executions:read</TableCell>
       <TableCell>Read execution status and logs</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">executions:write</TableCell>
+      <TableCell className="font-medium font-mono">executions:write</TableCell>
       <TableCell>Trigger pipeline executions</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">admin</TableCell>
+      <TableCell className="font-medium font-mono">admin</TableCell>
       <TableCell>Full access (use with caution)</TableCell>
     </TableRow>
   </TableBody>
@@ -142,15 +142,15 @@ curl -X POST https://auth.xether.ai/oauth/token \
   </TableHeader>
   <TableBody>
     <TableRow>
-      <TableCell className="font-mono">401 Unauthorized</TableCell>
+      <TableCell className="font-medium font-mono">401 Unauthorized</TableCell>
       <TableCell>Missing or invalid API key</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">403 Forbidden</TableCell>
+      <TableCell className="font-medium font-mono">403 Forbidden</TableCell>
       <TableCell>Valid key but insufficient scope</TableCell>
     </TableRow>
     <TableRow>
-      <TableCell className="font-mono">429 Too Many Requests</TableCell>
+      <TableCell className="font-medium font-mono">429 Too Many Requests</TableCell>
       <TableCell>Rate limit exceeded</TableCell>
     </TableRow>
   </TableBody>
