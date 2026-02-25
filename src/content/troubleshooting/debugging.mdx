@@ -1,0 +1,587 @@
+---
+title: "Debugging Guide"
+description: "Comprehensive debugging techniques and tools for Xether AI pipelines"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# Debugging Guide
+
+Effective debugging is essential for maintaining reliable Xether AI pipelines. This guide covers systematic debugging techniques, tools, and best practices.
+
+## Debugging Fundamentals
+
+### Debugging Methodology
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Step</TableHead>
+      <TableHead>Action</TableHead>
+      <TableHead>Tools</TableHead>
+      <TableHead>Goal</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">1. Reproduce</TableCell>
+      <TableCell>Recreate the issue consistently</TableCell>
+      <TableCell>Test data, dry run</TableCell>
+      <TableCell>Confirm issue exists</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">2. Isolate</TableCell>
+      <TableCell>Identify the failing component</TableCell>
+      <TableCell>Logs, metrics</TableCell>
+      <TableCell>Narrow down scope</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">3. Analyze</TableCell>
+      <TableCell>Examine root cause</TableCell>
+      <TableCell>Debug mode, profiling</TableCell>
+      <TableCell>Understand why</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">4. Fix</TableCell>
+      <TableCell>Implement solution</TableCell>
+      <TableCell>Code editor, config files</TableCell>
+      <TableCell>Resolve issue</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">5. Verify</TableCell>
+      <TableCell>Confirm fix works</TableCell>
+      <TableCell>Tests, monitoring</TableCell>
+      <TableCell>Prevent regression</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Debugging Levels
+
+```yaml
+# Debugging configuration
+debugging:
+  levels:
+    - name: "basic"
+      enabled: true
+      logging: "info"
+      metrics: true
+      
+    - name: "detailed"
+      enabled: false
+      logging: "debug"
+      profiling: true
+      
+    - name: "comprehensive"
+      enabled: false
+      logging: "trace"
+      tracing: true
+      memory_profiling: true
+```
+
+## Pipeline Debugging
+
+### Enable Debug Mode
+
+```yaml
+# Debug-enabled pipeline
+name: "debug-pipeline"
+debug:
+  enabled: true
+  level: "detailed"
+  
+  # Debug options
+  log_inputs: true
+  log_outputs: true
+  log_intermediate: true
+  save_checkpoints: true
+  
+  # Performance debugging
+  profile_stages: true
+  memory_tracking: true
+  timing_analysis: true
+
+source:
+  type: "s3"
+  bucket: "my-bucket"
+  path: "data/"
+
+stages:
+  - type: "debug_checkpoint"
+    name: "pre_processing"
+    config:
+      save_state: true
+      include_data: false
+      
+  - type: "clean"
+    config:
+      debug_mode: true
+      log_transformations: true
+      
+  - type: "debug_checkpoint"
+    name: "post_processing"
+    config:
+      save_state: true
+      include_data: true
+```
+
+### Step-by-Step Debugging
+
+```bash
+# 1. Validate configuration
+xether pipeline validate --debug my-pipeline.yaml
+
+# 2. Dry run without execution
+xether pipeline dry-run --verbose my-pipeline.yaml
+
+# 3. Run with sample data
+xether pipeline run --sample-size 100 --debug my-pipeline.yaml
+
+# 4. Run with full debugging
+xether pipeline run --debug --trace --profile my-pipeline.yaml
+```
+
+### Interactive Debugging
+
+```yaml
+# Interactive debugging pipeline
+name: "interactive-debug"
+debug:
+  interactive: true
+  breakpoints:
+    - stage: "clean"
+      condition: "error_count > 0"
+    - stage: "transform"
+      condition: "processing_time > 60s"
+
+stages:
+  - type: "clean"
+    config:
+      debug:
+        interactive: true
+        pause_on_error: true
+        show_data_sample: true
+        
+  - type: "transform"
+    config:
+      debug:
+        step_through: true
+        show_intermediate: true
+```
+
+## Data Debugging
+
+### Data Inspection
+
+```yaml
+# Data debugging stage
+stages:
+  - type: "data_inspect"
+    config:
+      sample_size: 1000
+      show_schema: true
+      show_statistics: true
+      show_sample_data: true
+      
+  - type: "data_profile"
+    config:
+      detailed: true
+      include_nulls: true
+      include_outliers: true
+      
+  - type: "data_validate"
+    config:
+      debug_mode: true
+      log_violations: true
+      save_errors: true
+```
+
+### Data Quality Debugging
+
+```bash
+# Check data quality
+xether data quality-check --debug --verbose dataset_name
+
+# Profile data
+xether data profile --sample-size 10000 --detailed dataset_name
+
+# Validate schema
+xether data validate --strict --debug dataset_name
+```
+
+### Sample Data Testing
+
+```yaml
+# Sample data testing
+stages:
+  - type: "sample_test"
+    config:
+      sample_sizes: [10, 100, 1000]
+      test_stages: ["clean", "transform", "validate"]
+      compare_results: true
+      
+  - type: "incremental_test"
+    config:
+      start_size: 100
+      max_size: 10000
+      step_size: 100
+      stop_on_error: true
+```
+
+## Performance Debugging
+
+### Performance Profiling
+
+```yaml
+# Performance debugging
+stages:
+  - type: "profile"
+    config:
+      enabled: true
+      metrics:
+        - "cpu_usage"
+        - "memory_usage"
+        - "io_operations"
+        - "network_throughput"
+      interval: "1s"
+      
+  - type: "benchmark"
+    config:
+      iterations: 5
+      warmup_iterations: 2
+      collect_metrics: true
+      save_results: true
+```
+
+### Memory Debugging
+
+```yaml
+# Memory debugging
+stages:
+  - type: "memory_profile"
+    config:
+      enabled: true
+      track_allocations: true
+      track_deallocations: true
+      snapshot_interval: "30s"
+      
+  - type: "memory_debug"
+    config:
+      leak_detection: true
+      usage_analysis: true
+      optimization_suggestions: true
+```
+
+### Bottleneck Analysis
+
+```bash
+# Profile pipeline performance
+xether pipeline profile --detailed --output json my-pipeline.yaml
+
+# Analyze bottlenecks
+xether pipeline analyze --bottlenecks --recommendations my-pipeline.yaml
+
+# Compare performance
+xether pipeline compare --baseline baseline.json --current current.json
+```
+
+## Error Debugging
+
+### Error Analysis
+
+```yaml
+# Error debugging configuration
+stages:
+  - type: "error_capture"
+    config:
+      capture_full_context: true
+      include_stack_trace: true
+      include_data_sample: true
+      save_to_file: true
+      
+  - type: "error_analysis"
+    config:
+      categorize_errors: true
+      identify_patterns: true
+      suggest_solutions: true
+```
+
+### Error Reproduction
+
+```bash
+# Reproduce specific error
+xether pipeline reproduce --error-id "err_12345" my-pipeline.yaml
+
+# Test error scenarios
+xether pipeline test --error-scenarios my-pipeline.yaml
+
+# Debug specific stage
+xether stage debug --stage-name "transform" --error-id "err_12345"
+```
+
+### Error Pattern Analysis
+
+```yaml
+# Error pattern detection
+stages:
+  - type: "error_pattern_analysis"
+    config:
+      lookback_period: "7d"
+      min_occurrences: 3
+      pattern_types: ["recurring", "cascading", "intermittent"]
+      
+  - type: "error_correlation"
+    config:
+      correlate_with: ["data_volume", "resource_usage", "external_dependencies"]
+      correlation_threshold: 0.7
+```
+
+## Advanced Debugging Tools
+
+### Distributed Tracing
+
+```yaml
+# Distributed tracing
+tracing:
+  enabled: true
+  sample_rate: 1.0  # 100% for debugging
+  
+  spans:
+    - name: "pipeline_execution"
+      tags: ["pipeline_name", "environment"]
+      
+    - name: "stage_execution"
+      tags: ["stage_type", "stage_name"]
+      
+    - name: "data_processing"
+      tags: ["operation", "record_count"]
+
+export:
+  jaeger:
+    endpoint: "https://jaeger.xether.ai"
+  prometheus:
+    endpoint: "https://prometheus.xether.ai"
+```
+
+### Custom Debugging Scripts
+
+```python
+# custom_debug.py
+import xether
+import logging
+
+def debug_pipeline(pipeline_name, stage_name=None):
+    """Custom debugging function"""
+    
+    # Enable detailed logging
+    logging.basicConfig(level=logging.DEBUG)
+    
+    # Load pipeline
+    pipeline = xether.load_pipeline(pipeline_name)
+    
+    if stage_name:
+        # Debug specific stage
+        stage = pipeline.get_stage(stage_name)
+        debug_stage(stage)
+    else:
+        # Debug entire pipeline
+        debug_entire_pipeline(pipeline)
+
+def debug_stage(stage):
+    """Debug individual stage"""
+    print(f"Debugging stage: {stage.name}")
+    
+    # Check configuration
+    print(f"Configuration: {stage.config}")
+    
+    # Test with sample data
+    sample_data = generate_sample_data(stage.input_schema)
+    result = stage.process(sample_data)
+    
+    # Analyze results
+    analyze_results(result)
+
+def analyze_results(result):
+    """Analyze stage results"""
+    print(f"Processed {len(result)} records")
+    print(f"Errors: {result.error_count}")
+    print(f"Warnings: {result.warning_count}")
+    
+    # Check for issues
+    if result.error_count > 0:
+        print("ERRORS FOUND:")
+        for error in result.errors:
+            print(f"  - {error}")
+```
+
+### Debugging Dashboard
+
+```yaml
+# Debugging dashboard configuration
+dashboard:
+  name: "pipeline-debug"
+  refresh_interval: "5s"
+  
+  panels:
+    - title: "Pipeline Status"
+      type: "status"
+      metrics: ["pipeline_status", "last_run_time"]
+      
+    - title: "Error Rate"
+      type: "graph"
+      metrics: ["error_rate", "error_count"]
+      time_range: "last_1h"
+      
+    - title: "Performance Metrics"
+      type: "table"
+      metrics: ["stage_duration", "memory_usage", "cpu_usage"]
+      
+    - title: "Data Quality"
+      type: "gauge"
+      metrics: ["data_quality_score", "completeness", "validity"]
+```
+
+## Debugging Best Practices
+
+### Proactive Debugging
+
+<Callout type="info">
+**Design for Debugging**: Build pipelines with debugging in mind from the start
+</Callout>
+
+1. **Comprehensive Logging**: Log at appropriate levels with meaningful messages
+2. **Error Handling**: Handle errors gracefully with detailed error information
+3. **Checkpoints**: Save intermediate results for debugging
+4. **Monitoring**: Set up monitoring to catch issues early
+
+### Debugging Workflow
+
+```yaml
+# Debugging workflow
+debugging_workflow:
+  steps:
+    - name: "initial_assessment"
+      action: "quick_health_check"
+      tools: ["logs", "metrics"]
+      
+    - name: "reproduce_issue"
+      action: "controlled_reproduction"
+      tools: ["test_data", "dry_run"]
+      
+    - name: "isolate_problem"
+      action: "binary_search_debugging"
+      tools: ["stage_isolation", "feature_flags"]
+      
+    - name: "analyze_root_cause"
+      action: "deep_analysis"
+      tools: ["profiling", "tracing"]
+      
+    - name: "implement_fix"
+      action: "targeted_fix"
+      tools: ["code_editor", "config_editor"]
+      
+    - name: "validate_solution"
+      action: "comprehensive_testing"
+      tools: ["unit_tests", "integration_tests"]
+```
+
+### Debugging Checklist
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Category</TableHead>
+      <TableHead>Check</TableHead>
+      <TableHead>Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Configuration</TableCell>
+      <TableCell>YAML syntax validation</TableCell>
+      <TableCell>✅</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Data</TableCell>
+      <TableCell>Schema validation</TableCell>
+      <TableCell>✅</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Permissions</TableCell>
+      <TableCell>Access rights verification</TableCell>
+      <TableCell>✅</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Resources</TableCell>
+      <TableCell>Memory/CPU availability</TableCell>
+      <TableCell>✅</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Network</TableCell>
+      <TableCell>Connectivity testing</TableCell>
+      <TableCell>✅</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+## Troubleshooting Common Debugging Issues
+
+### Debug Mode Performance Impact
+
+<Callout type="warning">
+**Performance Impact**: Debug mode can significantly slow down pipelines. Use only when necessary.
+</Callout>
+
+**Solution**:
+```yaml
+debug:
+  level: "selective"
+  stages: ["problematic_stage"]
+  metrics: ["essential_only"]
+```
+
+### Log Overload
+
+<Callout type="warning">
+**Log Volume**: Debug logging can generate massive log files.
+</Callout>
+
+**Solution**:
+```yaml
+logging:
+  level: "info"
+  debug_stages: ["target_stage"]
+  log_rotation: true
+  max_log_size: "100MB"
+```
+
+### Debug Data Privacy
+
+<Callout type="tip">
+**Data Privacy**: Be careful with debug data containing sensitive information.
+</Callout>
+
+**Solution**:
+```yaml
+debug:
+  anonymize_data: true
+  mask_sensitive_fields: ["email", "phone", "ssn"]
+  data_retention: "7d"
+```
+
+## Getting Help with Debugging
+
+### Debugging Support
+
+1. **Community Forum**: [community.xether.ai](https://community.xether.ai)
+2. **Documentation**: [docs.xether.ai/debugging](https://docs.xether.ai/debugging)
+3. **Examples**: [github.com/xether-ai/debugging-examples](https://github.com/xether-ai/debugging-examples)
+
+### Debugging Resources
+
+- [Debugging Tools Reference](/docs/tools/debugging)
+- [Performance Tuning Guide](/docs/guides/performance-tuning)
+- [Error Handling Best Practices](/docs/best-practices/error-handling)
+
+By following these debugging techniques and best practices, you can efficiently identify and resolve issues in your Xether AI pipelines.

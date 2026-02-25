@@ -1,0 +1,651 @@
+---
+title: "How to Version Datasets"
+description: "Step-by-step guide to versioning datasets in Xether AI for reproducible data workflows"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# How to Version Datasets
+
+Dataset versioning is essential for reproducible data workflows, collaboration, and compliance. This practical guide shows you how to effectively version datasets using Xether AI's powerful versioning system.
+
+## Prerequisites
+
+- Xether AI account with appropriate permissions
+- Basic understanding of dataset concepts
+- Familiarity with command line interface
+- Access to the datasets you want to version
+
+## What You'll Learn
+
+- Manual dataset versioning
+- Semantic versioning strategies
+- Branching and merging
+- Tagging and labeling
+- Best practices for team collaboration
+
+## Quick Start
+
+### Creating Your First Version
+
+```bash
+# Initialize a new dataset
+xether dataset init \
+  --name "customer-analytics" \
+  --description "Customer behavior analytics dataset" \
+  --schema "customer_schema.yaml"
+
+# Add data and create first version
+xether dataset add \
+  --name "customer-analytics" \
+  --file "customers_2024_q1.csv" \
+  --message "Initial Q1 2024 customer data"
+
+# List all versions
+xether dataset list --name "customer-analytics"
+```
+
+Output:
+```
+📦 Dataset: customer-analytics
+📋 Versions:
+├── v1.0.0 (ds_abc123def456) - 2024-02-25 10:30:00 [CURRENT]
+└── Total: 1 version, 2.4 GB data
+```
+
+## Manual Version Creation
+
+### Adding Data to Create Versions
+
+```bash
+# Add a single file
+xether dataset add \
+  --name "customer-analytics" \
+  --file "new_customers.csv" \
+  --message "Add new customer records"
+
+# Add multiple files
+xether dataset add \
+  --name "customer-analytics" \
+  --files "customers.csv,transactions.csv,interactions.csv" \
+  --message "Add transaction and interaction data"
+
+# Add from directory
+xether dataset add \
+  --name "customer-analytics" \
+  --directory "./data/q2_2024/" \
+  --recursive \
+  --message "Q2 2024 data upload"
+```
+
+### Creating Versions with Specific Tags
+
+```bash
+# Create version with semantic tag
+xether dataset version create \
+  --name "customer-analytics" \
+  --tag "v1.1.0" \
+  --message "Add customer segmentation data"
+
+# Create version with custom tag
+xether dataset version create \
+  --name "customer-analytics" \
+  --tag "quarterly-report" \
+  --message "Q2 2024 quarterly report dataset"
+
+# Create version with multiple tags
+xether dataset version create \
+  --name "customer-analytics" \
+  --tags "v1.2.0,production,validated" \
+  --message "Production-ready dataset with validation"
+```
+
+### Version from Existing Data
+
+```bash
+# Version from current state
+xether dataset version create \
+  --name "customer-analytics" \
+  --from-current \
+  --tag "snapshot-$(date +%Y%m%d)"
+
+# Version from specific files
+xether dataset version create \
+  --name "customer-analytics" \
+  --files "cleaned_customers.csv,enriched_data.csv" \
+  --tag "processed"
+
+# Version with metadata
+xether dataset version create \
+  --name "customer-analytics" \
+  --metadata '{"source": "crm_system", "quality_score": 0.95}' \
+  --tag "high-quality"
+```
+
+## Working with Versions
+
+### Listing and Inspecting Versions
+
+```bash
+# List all versions
+xether dataset list --name "customer-analytics"
+
+# List with details
+xether dataset list \
+  --name "customer-analytics" \
+  --detailed \
+  --format "table"
+
+# List specific tag versions
+xether dataset list \
+  --name "customer-analytics" \
+  --tag "production"
+
+# Get version information
+xether dataset info \
+  --name "customer-analytics" \
+  --version "v1.2.0"
+
+# Get version metadata
+xether dataset info \
+  --name "customer-analytics" \
+  --version "v1.2.0" \
+  --show-metadata
+```
+
+### Downloading Specific Versions
+
+```bash
+# Download latest version
+xether dataset download \
+  --name "customer-analytics" \
+  --output "./latest/"
+
+# Download specific version
+xether dataset download \
+  --name "customer-analytics" \
+  --version "v1.1.0" \
+  --output "./v1.1.0/"
+
+# Download tagged version
+xether dataset download \
+  --name "customer-analytics" \
+  --tag "production" \
+  --output "./production/"
+
+# Download with format conversion
+xether dataset download \
+  --name "customer-analytics" \
+  --version "v1.2.0" \
+  --format "parquet" \
+  --output "./parquet/"
+```
+
+## Branching and Merging
+
+### Creating Branches
+
+```bash
+# Create new branch from current version
+xether dataset branch \
+  --name "customer-analytics" \
+  --create "feature/customer-segmentation" \
+  --from "v1.2.0"
+
+# Create branch from specific version
+xether dataset branch \
+  --name "customer-analytics" \
+  --create "hotfix/data-quality" \
+  --from "v1.1.0"
+
+# Create branch from tag
+xether dataset branch \
+  --name "customer-analytics" \
+  --create "experiment/ml-features" \
+  --from "production"
+```
+
+### Working with Branches
+
+```bash
+# List all branches
+xether dataset branch --name "customer-analytics"
+
+# Switch to branch
+xether dataset checkout \
+  --name "customer-analytics" \
+  --branch "feature/customer-segmentation"
+
+# Add data to branch
+xether dataset add \
+  --name "customer-analytics" \
+  --file "segmentation_results.csv" \
+  --message "Add ML-based customer segments"
+
+# Compare branches
+xether dataset diff \
+  --name "customer-analytics" \
+  --from "main" \
+  --to "feature/customer-segmentation"
+```
+
+### Merging Branches
+
+```bash
+# Merge feature branch
+xether dataset merge \
+  --name "customer-analytics" \
+  --from "feature/customer-segmentation" \
+  --to "main" \
+  --message "Add customer segmentation features"
+
+# Merge with conflict resolution
+xether dataset merge \
+  --name "customer-analytics" \
+  --from "hotfix/critical-bug" \
+  --to "main" \
+  --strategy "theirs" \
+  --message "Fix critical data quality issue"
+
+# Create merge commit
+xether dataset version create \
+  --name "customer-analytics" \
+  --tag "v1.3.0" \
+  --message "Merge customer segmentation features"
+```
+
+## Advanced Versioning
+
+### Semantic Versioning
+
+```bash
+# Set versioning strategy
+xether dataset config \
+  --name "customer-analytics" \
+  --set versioning.strategy "semantic"
+
+# Create major version (breaking changes)
+xether dataset version create \
+  --name "customer-analytics" \
+  --bump "major" \
+  --message "Restructure customer data schema"
+
+# Create minor version (new features)
+xether dataset version create \
+  --name "customer-analytics" \
+  --bump "minor" \
+  --message "Add customer lifetime value calculation"
+
+# Create patch version (bug fixes)
+xether dataset version create \
+  --name "customer-analytics" \
+  --bump "patch" \
+  --message "Fix customer ID duplication issue"
+```
+
+### Automated Versioning
+
+```yaml
+# automated-versioning.yaml
+name: "automated-customer-analytics"
+triggers:
+  - type: "schedule"
+    cron: "0 2 * * *"  # Daily at 2 AM
+    
+  - type: "webhook"
+    url: "https://api.crm.com/data-updates"
+    events: ["customer_data_updated"]
+
+stages:
+  - type: "data_fetch"
+    config:
+      source: "crm_api"
+      auth: "${CRM_API_KEY}"
+      
+  - type: "data_validate"
+    config:
+      schema_file: "customer_schema.yaml"
+      quality_threshold: 0.95
+      
+  - type: "auto_version"
+    config:
+      tagging_strategy: "semantic"
+      auto_tag: ["daily", "validated"]
+      require_validation: true
+```
+
+## Tagging Strategies
+
+### Environment Tags
+
+```bash
+# Environment-based tagging
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --tag "development"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_def789ghi012" \
+  --tag "staging"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_ghi345jkl789" \
+  --tag "production"
+```
+
+### Purpose Tags
+
+```bash
+# Purpose-based tagging
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --tag "ml-training"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_def789ghi012" \
+  --tag "analytics-dashboard"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_ghi345jkl789" \
+  --tag "compliance-audit"
+```
+
+### Quality Tags
+
+```bash
+# Quality-based tagging
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --tag "validated"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_def789ghi012" \
+  --tag "certified"
+
+xether dataset tag \
+  --name "customer-analytics" \
+  --version "ds_ghi345jkl789" \
+  --tag "experimental"
+```
+
+## Collaboration Workflows
+
+### Team-Based Versioning
+
+```bash
+# Create team workspace
+xether dataset workspace \
+  --create "customer-analytics-team" \
+  --members "alice@company.com,bob@company.com,carol@company.com"
+
+# Switch to team workspace
+xether workspace switch "customer-analytics-team"
+
+# Collaborative versioning
+xether dataset add \
+  --name "customer-analytics" \
+  --file "alice_contribution.csv" \
+  --author "alice@company.com" \
+  --message "Add customer demographic data"
+
+xether dataset add \
+  --name "customer-analytics" \
+  --file "bob_analysis.csv" \
+  --author "bob@company.com" \
+  --message "Add customer behavior analysis"
+```
+
+### Review and Approval
+
+```bash
+# Request review
+xether dataset review request \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --reviewers "data-team@company.com" \
+  --message "Please review Q1 data quality"
+
+# Approve version
+xether dataset review approve \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --approver "lead-data-scientist@company.com" \
+  --message "Data quality approved for production"
+
+# Reject with feedback
+xether dataset review reject \
+  --name "customer-analytics" \
+  --version "ds_abc123def456" \
+  --reason "Missing validation for new fields"
+  --message "Please add data quality checks before approval"
+```
+
+## Best Practices
+
+### Version Organization
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Practice</TableHead>
+      <TableHead>Implementation</TableHead>
+      <TableHead>Benefits</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Semantic Versioning</TableCell>
+      <TableCell>Use v1.0.0, v1.1.0, v1.1.1 pattern</TableCell>
+      <TableCell>Clear communication of breaking changes</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Environment Tags</TableCell>
+      <TableCell>Tag versions as dev, staging, production</TableCell>
+      <TableCell>Easy deployment and rollback</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Descriptive Messages</TableCell>
+      <TableCell>Write clear commit messages explaining changes</TableCell>
+      <TableCell>Better version understanding</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Regular Releases</TableCell>
+      <TableCell>Version on schedule (daily, weekly, milestone)</TableCell>
+      <TableCell>Predictable release cadence</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Data Quality Standards
+
+<Callout type="info">
+**Quality Gates**: Establish minimum quality thresholds before versioning
+</Callout>
+
+<Callout type="warning">
+**Validation**: Always validate data before creating versions
+</Callout>
+
+<Callout type="tip">
+**Documentation**: Document data sources, transformations, and quality metrics
+</Callout>
+
+### Security Considerations
+
+```yaml
+# security-config.yaml
+security:
+  encryption: true
+  access_control: "rbac"
+  audit_logging: true
+  data_classification: "sensitive"
+  
+retention:
+  automatic_cleanup: true
+  compliance_retention: "7_years"
+  gdpr_compliance: true
+```
+
+## Monitoring and Maintenance
+
+### Version Monitoring
+
+```bash
+# Monitor version activity
+xether dataset monitor \
+  --name "customer-analytics" \
+  --metrics "versions_per_day,data_size,quality_score"
+
+# Set up alerts
+xether dataset alert \
+  --name "customer-analytics" \
+  --condition "versions_per_day > 10" \
+  --action "notify_team"
+
+# Generate version report
+xether dataset report \
+  --name "customer-analytics" \
+  --period "last_30_days" \
+  --format "html"
+```
+
+### Maintenance Tasks
+
+```bash
+# Cleanup old versions
+xether dataset cleanup \
+  --name "customer-analytics" \
+  --keep-latest 10 \
+  --keep-tagged "production,quarterly" \
+  --older-than "90_days"
+
+# Archive old data
+xether dataset archive \
+  --name "customer-analytics" \
+  --before "2024-01-01" \
+  --storage "cold_storage"
+
+# Compress historical versions
+xether dataset compress \
+  --name "customer-analytics" \
+  --older-than "30_days" \
+  --algorithm "gzip"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<Callout type="warning">
+**Issue**: Version conflicts during merge
+**Solution**: Use `xether dataset diff` to identify conflicts, then resolve manually
+</Callout>
+
+<Callout type="warning">
+**Issue**: Large file uploads failing
+**Solution**: Use chunked upload with `--chunk-size` parameter
+</Callout>
+
+<Callout type="warning">
+**Issue**: Permission denied on dataset operations
+**Solution**: Check workspace permissions and user role assignments
+</Callout>
+
+### Recovery Procedures
+
+```bash
+# Reset to last known good state
+xether dataset reset \
+  --name "customer-analytics" \
+  --to "production" \
+  --force
+
+# Recover corrupted version
+xether dataset recover \
+  --name "customer-analytics" \
+  --version "ds_corrupted_version" \
+  --from-backup
+
+# Restore deleted version
+xether dataset restore \
+  --name "customer-analytics" \
+  --version "ds_deleted_version" \
+  --from-trash
+```
+
+## Integration Examples
+
+### CI/CD Pipeline Integration
+
+```yaml
+# ci-cd.yaml
+name: "dataset-versioning-ci"
+
+stages:
+  - type: "checkout_dataset"
+    config:
+      repository: "customer-analytics"
+      
+  - type: "run_tests"
+    config:
+      test_suite: "data_quality"
+      
+  - type: "create_version"
+    config:
+      auto_tag: "ci-${BUILD_NUMBER}"
+      message: "CI build ${BUILD_NUMBER}"
+      
+  - type: "deploy_to_staging"
+    condition: "branch == 'main'"
+    config:
+      environment: "staging"
+      
+  - type: "deploy_to_production"
+    condition: "tag matches 'v*'"
+    config:
+      environment: "production"
+```
+
+### API Integration
+
+```bash
+# Version via API
+curl -X POST https://api.xether.ai/v1/datasets/customer-analytics/versions \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "API version creation",
+    "tags": ["api", "automated"],
+    "metadata": {"source": "api_call"}
+  }'
+
+# Get version info via API
+curl https://api.xether.ai/v1/datasets/customer-analytics/versions/latest \
+  -H "Authorization: Bearer $API_TOKEN"
+```
+
+## Next Steps
+
+Now that you understand dataset versioning:
+
+- Learn about [Pipeline Monitoring](/docs/tutorials/pipeline-monitoring)
+- Explore [Data Quality Best Practices](/docs/tutorials/data-quality)
+- Check [Advanced Pipeline Patterns](/docs/tutorials/advanced-pipelines)
+
+## Resources
+
+- [API Reference: Datasets](/docs/api-reference/datasets)
+- [CLI Reference: Dataset Commands](/docs/cli/dataset)
+- [Best Practices: Data Governance](/docs/best-practices/data-governance)
+- [Community Forum](https://community.xether.ai)
+
+For questions about dataset versioning, visit our [support center](https://support.xether.ai) or contact us at [support@xether.ai](mailto:support@xether.ai).
