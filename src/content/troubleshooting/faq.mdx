@@ -1,0 +1,721 @@
+---
+title: "Frequently Asked Questions"
+description: "Common questions and answers about Xether AI"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# Frequently Asked Questions
+
+This FAQ covers the most common questions about Xether AI, from getting started to advanced usage.
+
+## Getting Started
+
+### Q: What is Xether AI?
+
+**A**: Xether AI is a comprehensive data pipeline platform that helps you build, deploy, and manage data workflows at scale. It provides tools for data ingestion, transformation, validation, and machine learning integration.
+
+### Q: How do I get started with Xether AI?
+
+**A**: Follow these steps:
+
+1. **Sign up** for an account at [xether.ai](https://xether.ai)
+2. **Install the CLI**: `pip install xether-ai`
+3. **Configure authentication**: `xether config set api_key "your_key"`
+4. **Create your first pipeline**: `xether pipeline init my-first-pipeline`
+5. **Run your pipeline**: `xether pipeline run my-first-pipeline`
+
+### Q: What are the system requirements?
+
+**A**: Minimum requirements:
+- **CPU**: 2 cores
+- **Memory**: 4GB RAM
+- **Storage**: 10GB free space
+- **OS**: Linux, macOS, or Windows 10+
+
+Recommended for production:
+- **CPU**: 4+ cores
+- **Memory**: 8GB+ RAM
+- **Storage**: 100GB+ SSD
+- **Network**: Stable internet connection
+
+### Q: Is there a free tier available?
+
+**A**: Yes! Xether AI offers a generous free tier that includes:
+- Up to 5 concurrent pipelines
+- 100GB data processing per month
+- Basic monitoring and logging
+- Community support
+
+See our [pricing page](https://xether.ai/pricing) for detailed plans.
+
+## Installation and Setup
+
+### Q: How do I install Xether AI?
+
+**A**: Installation methods:
+
+**Python (Recommended)**:
+```bash
+pip install xether-ai
+```
+
+**npm**:
+```bash
+npm install -g @xether/cli
+```
+
+**Docker**:
+```bash
+docker pull xetherai/cli:latest
+```
+
+**Homebrew (macOS)**:
+```bash
+brew install xetherai/tap/xether
+```
+
+### Q: How do I update Xether AI?
+
+**A**: Update methods:
+
+**pip**:
+```bash
+pip install --upgrade xether-ai
+```
+
+**npm**:
+```bash
+npm update -g @xether/cli
+```
+
+**Docker**:
+```bash
+docker pull xetherai/cli:latest
+```
+
+### Q: How do I configure authentication?
+
+**A**: Set up your API key:
+
+```bash
+# Method 1: Environment variable
+export XETHER_API_KEY="your_api_key_here"
+
+# Method 2: Config file
+xether config set api_key "your_api_key_here"
+
+# Method 3: Interactive setup
+xether auth login
+```
+
+<Callout type="warning">
+**Security**: Never commit API keys to version control. Use environment variables or secret management.
+</Callout>
+
+## Pipelines
+
+### Q: What is a pipeline?
+
+**A**: A pipeline is a sequence of data processing stages that transform raw data into valuable insights. Each pipeline consists of:
+- **Source**: Where data comes from
+- **Stages**: Processing steps (clean, transform, validate, etc.)
+- **Output**: Where results go
+
+### Q: How do I create a pipeline?
+
+**A**: Create a pipeline using the CLI:
+
+```bash
+# Initialize new pipeline
+xether pipeline init my-pipeline
+
+# This creates my-pipeline.yaml with basic structure
+```
+
+Example pipeline configuration:
+```yaml
+name: "my-pipeline"
+source:
+  type: "s3"
+  bucket: "my-bucket"
+  path: "data/"
+stages:
+  - type: "clean"
+    config:
+      remove_nulls: true
+  - type: "validate"
+    config:
+      schema_file: "schema.yaml"
+```
+
+### Q: What pipeline stages are available?
+
+**A**: Xether AI provides many built-in stages:
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Category</TableHead>
+      <TableHead>Stages</TableHead>
+      <TableHead>Description</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Data Ingestion</TableCell>
+      <TableCell className="font-mono">ingest, read, fetch</TableCell>
+      <TableCell>Load data from various sources</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Data Cleaning</TableCell>
+      <TableCell className="font-mono">clean, filter, dedupe</TableCell>
+      <TableCell>Clean and preprocess data</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Transformation</TableCell>
+      <TableCell className="font-mono">transform, enrich, aggregate</TableCell>
+      <TableCell>Transform and enhance data</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Validation</TableCell>
+      <TableCell className="font-mono">validate, check, verify</TableCell>
+      <TableCell>Ensure data quality</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Machine Learning</TableCell>
+      <TableCell className="font-mono">ml_train, ml_predict, ml_score</TableCell>
+      <TableCell>ML model operations</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Q: How do I run a pipeline?
+
+**A**: Run pipelines with various options:
+
+```bash
+# Basic run
+xether pipeline run my-pipeline
+
+# With monitoring
+xether pipeline run --monitor my-pipeline
+
+# With sample data
+xether pipeline run --sample-size 1000 my-pipeline
+
+# Dry run (no execution)
+xether pipeline dry-run my-pipeline
+
+# Debug mode
+xether pipeline run --debug my-pipeline
+```
+
+### Q: How do I monitor pipeline execution?
+
+**A**: Monitor pipelines using:
+
+```bash
+# Check status
+xether pipeline status my-pipeline
+
+# Watch execution
+xether pipeline status --watch my-pipeline
+
+# View logs
+xether pipeline logs my-pipeline
+
+# View metrics
+xether pipeline metrics my-pipeline
+```
+
+Or use the web dashboard at [dashboard.xether.ai](https://dashboard.xether.ai).
+
+## Data Sources
+
+### Q: What data sources are supported?
+
+**A**: Xether AI supports many data sources:
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Category</TableHead>
+      <TableHead>Sources</TableHead>
+      <TableHead>Authentication</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Cloud Storage</TableCell>
+      <TableCell className="font-mono">S3, GCS, Azure Blob</TableCell>
+      <TableCell>API keys, IAM roles</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Databases</TableCell>
+      <TableCell className="font-mono">PostgreSQL, MySQL, MongoDB</TableCell>
+      <TableCell>Connection strings, credentials</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">File Systems</TableCell>
+      <TableCell className="font-mono">Local, NFS, HDFS</TableCell>
+      <TableCell>File permissions</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">APIs</TableCell>
+      <TableCell className="font-mono">REST, GraphQL, Webhooks</TableCell>
+      <TableCell>API keys, OAuth tokens</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Streaming</TableCell>
+      <TableCell className="font-mono">Kafka, Kinesis, Pulsar</TableCell>
+      <TableCell>Consumer groups, ACLs</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Q: How do I connect to S3?
+
+**A**: Configure S3 connection:
+
+```yaml
+source:
+  type: "s3"
+  bucket: "my-bucket"
+  path: "data/"
+  config:
+    region: "us-west-2"
+    access_key: "${AWS_ACCESS_KEY_ID}"
+    secret_key: "${AWS_SECRET_ACCESS_KEY}"
+```
+
+Or use IAM roles:
+```yaml
+source:
+  type: "s3"
+  bucket: "my-bucket"
+  path: "data/"
+  config:
+    use_iam_role: true
+    role_arn: "arn:aws:iam::123456789012:role/XetherRole"
+```
+
+### Q: How do I connect to a database?
+
+**A**: Database connection example:
+
+```yaml
+source:
+  type: "postgresql"
+  config:
+    host: "localhost"
+    port: 5432
+    database: "mydb"
+    username: "${DB_USER}"
+    password: "${DB_PASSWORD}"
+    query: "SELECT * FROM users WHERE updated_at > ?"
+```
+
+## Data Processing
+
+### Q: How do I handle missing values?
+
+**A**: Handle missing values with various strategies:
+
+```yaml
+stages:
+  - type: "handle_missing"
+    config:
+      strategy: "impute"  # Options: drop, impute, flag
+      method: "mean"     # Options: mean, median, mode, constant
+      fields: ["age", "income"]
+      
+  - type: "handle_missing"
+    config:
+      strategy: "interpolate"
+      method: "linear"
+      fields: ["temperature", "pressure"]
+```
+
+### Q: How do I validate data quality?
+
+**A**: Set up data validation:
+
+```yaml
+stages:
+  - type: "validate"
+    config:
+      schema_file: "schema.yaml"
+      quality_threshold: 0.95
+      rules:
+        - field: "email"
+          type: "email"
+          required: true
+        - field: "age"
+          type: "integer"
+          min: 0
+          max: 150
+```
+
+### Q: How do I transform data?
+
+**A**: Transform data using various methods:
+
+```yaml
+stages:
+  - type: "transform"
+    config:
+      operations:
+        - type: "rename"
+          from: "user_id"
+          to: "customer_id"
+        - type: "calculate"
+          name: "full_name"
+          expression: "first_name + ' ' + last_name"
+        - type: "filter"
+          condition: "age >= 18"
+```
+
+## Performance and Scaling
+
+### Q: How do I improve pipeline performance?
+
+**A**: Performance optimization tips:
+
+1. **Parallel Processing**:
+```yaml
+stages:
+  - type: "parallel"
+    config:
+      workers: 4
+      batch_size: 5000
+```
+
+2. **Caching**:
+```yaml
+stages:
+  - type: "cache"
+    config:
+      enabled: true
+      strategy: "memory"
+```
+
+3. **Streaming**:
+```yaml
+stages:
+  - type: "streaming"
+    config:
+      enabled: true
+      chunk_size: 10000
+```
+
+### Q: How do I handle large datasets?
+
+**A**: Strategies for large datasets:
+
+1. **Enable streaming processing**
+2. **Use appropriate chunk sizes**
+3. **Implement data partitioning**
+4. **Monitor memory usage**
+5. **Consider distributed processing**
+
+```yaml
+# Large dataset configuration
+stages:
+  - type: "partition"
+    config:
+      strategy: "hash"
+      field: "user_id"
+      partitions: 16
+      
+  - type: "streaming"
+    config:
+      chunk_size: 50000
+      memory_limit: "4GB"
+```
+
+### Q: What are the resource limits?
+
+**A**: Resource limits vary by plan:
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Plan</TableHead>
+      <TableHead>Memory</TableHead>
+      <TableHead>CPU</TableHead>
+      <TableHead>Storage</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Free</TableCell>
+      <TableCell>2GB</TableCell>
+      <TableCell>2 cores</TableCell>
+      <TableCell>10GB</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Pro</TableCell>
+      <TableCell>8GB</TableCell>
+      <TableCell>4 cores</TableCell>
+      <TableCell>100GB</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Enterprise</TableCell>
+      <TableCell>Unlimited</TableCell>
+      <TableCell>Unlimited</TableCell>
+      <TableCell>Unlimited</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+## Troubleshooting
+
+### Q: Why is my pipeline failing?
+
+**A**: Common failure reasons:
+
+1. **Configuration errors**: Invalid YAML syntax
+2. **Authentication issues**: Invalid API keys or credentials
+3. **Data format problems**: Unexpected data structure
+4. **Resource limits**: Insufficient memory or CPU
+5. **Network issues**: Connection timeouts
+
+**Debug steps**:
+```bash
+# Validate configuration
+xether pipeline validate my-pipeline.yaml
+
+# Check logs
+xether pipeline logs --level error my-pipeline
+
+# Test with sample data
+xether pipeline run --sample-size 100 my-pipeline
+```
+
+### Q: How do I debug slow pipelines?
+
+**A**: Debug performance issues:
+
+```bash
+# Profile pipeline
+xether pipeline profile my-pipeline
+
+# Analyze bottlenecks
+xether pipeline analyze --bottlenecks my-pipeline
+
+# Monitor resources
+xether pipeline monitor --resources my-pipeline
+```
+
+### Q: How do I handle errors?
+
+**A**: Error handling strategies:
+
+```yaml
+stages:
+  - type: "error_handling"
+    config:
+      strategy: "continue"  # Options: fail, continue, retry
+      max_retries: 3
+      log_errors: true
+      
+  - type: "circuit_breaker"
+    config:
+      failure_threshold: 5
+      recovery_timeout: "60s"
+```
+
+## Security and Compliance
+
+### Q: How secure is Xether AI?
+
+**A**: Xether AI implements enterprise-grade security:
+
+- **Encryption**: Data encrypted at rest and in transit
+- **Authentication**: Multi-factor authentication support
+- **Authorization**: Role-based access control (RBAC)
+- **Audit**: Comprehensive audit logging
+- **Compliance**: GDPR, SOC 2, HIPAA compliant
+
+### Q: How do I secure my data?
+
+**A**: Security best practices:
+
+1. **Use environment variables** for sensitive data
+2. **Enable encryption** for data at rest
+3. **Implement access controls** for data sources
+4. **Regular security audits** of configurations
+5. **Monitor access logs** for unusual activity
+
+```yaml
+# Security configuration
+security:
+  encryption: true
+  access_control: "rbac"
+  audit_logging: true
+  data_classification: "sensitive"
+```
+
+### Q: Is Xether AI GDPR compliant?
+
+**A**: Yes, Xether AI is GDPR compliant:
+
+- **Data minimization**: Only process necessary data
+- **Consent management**: Track data processing consent
+- **Right to be forgotten**: Data deletion capabilities
+- **Data portability**: Export data in standard formats
+- **Breach notification**: Automatic breach detection
+
+## Integration and APIs
+
+### Q: Does Xether AI have an API?
+
+**A**: Yes, Xether AI provides a comprehensive REST API:
+
+```bash
+# List pipelines
+curl https://api.xether.ai/v1/pipelines \
+  -H "Authorization: Bearer $API_KEY"
+
+# Run pipeline
+curl -X POST https://api.xether.ai/v1/pipelines/my-pipeline/run \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+### Q: What SDKs are available?
+
+**A**: Official SDKs for multiple languages:
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Language</TableHead>
+      <TableHead>Package</TableHead>
+      <TableHead>Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Python</TableCell>
+      <TableCell className="font-mono">xether-ai</TableCell>
+      <TableCell>✅ Stable</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">JavaScript</TableCell>
+      <TableCell className="font-mono">@xether/sdk</TableCell>
+      <TableCell>✅ Stable</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Go</TableCell>
+      <TableCell className="font-mono">github.com/xether-ai/go-sdk</TableCell>
+      <TableCell>✅ Stable</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Java</TableCell>
+      <TableCell className="font-mono">ai.xether:sdk</TableCell>
+      <TableCell>✅ Stable</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Q: How do I integrate with CI/CD?
+
+**A**: CI/CD integration examples:
+
+**GitHub Actions**:
+```yaml
+- name: Run Xether Pipeline
+  run: |
+    xether pipeline run --monitor my-pipeline
+  env:
+    XETHER_API_KEY: ${{ secrets.XETHER_API_KEY }}
+```
+
+**Jenkins**:
+```groovy
+stage('Run Pipeline') {
+  steps {
+    sh 'xether pipeline run my-pipeline'
+  }
+  environment {
+    XETHER_API_KEY = credentials('xether-api-key')
+  }
+}
+```
+
+## Support and Community
+
+### Q: How do I get help?
+
+**A**: Support channels:
+
+1. **Documentation**: [docs.xether.ai](https://docs.xether.ai)
+2. **Community Forum**: [community.xether.ai](https://community.xether.ai)
+3. **GitHub Issues**: [github.com/xether-ai/issues](https://github.com/xether-ai/issues)
+4. **Email Support**: [support@xether.ai](mailto:support@xether.ai)
+5. **Enterprise Support**: [enterprise-support@xether.ai](mailto:enterprise-support@xether.ai)
+
+### Q: Is there training available?
+
+**A**: Yes, we offer various training options:
+
+- **Free tutorials**: Comprehensive documentation and examples
+- **Video courses**: On-demand training videos
+- **Workshops**: Live instructor-led sessions
+- **Certification**: Official Xether AI certification program
+
+### Q: How do I contribute to Xether AI?
+
+**A**: Contribution guidelines:
+
+1. **Fork the repository** on GitHub
+2. **Create a feature branch** for your changes
+3. **Write tests** for your changes
+4. **Submit a pull request** with detailed description
+5. **Participate in code review**
+
+See our [contributing guide](https://github.com/xether-ai/.github/blob/main/CONTRIBUTING.md) for details.
+
+## Pricing and Billing
+
+### Q: How does pricing work?
+
+**A**: Xether AI uses transparent pricing:
+
+- **Free tier**: Up to 100GB processing/month
+- **Pro tier**: $99/month for 1TB processing
+- **Enterprise**: Custom pricing for large volumes
+
+See [xether.ai/pricing](https://xether.ai/pricing) for detailed information.
+
+### Q: How am I billed?
+
+**A**: Billing is based on:
+
+- **Data processed**: GB of data through pipelines
+- **Compute time**: Pipeline execution time
+- **Storage**: Data storage in Xether AI
+- **Additional features**: ML services, advanced monitoring
+
+### Q: Can I set usage limits?
+
+**A**: Yes, set budget alerts and limits:
+
+```bash
+# Set monthly budget
+xether billing set-budget --amount 1000 --currency USD
+
+# Set usage alerts
+xether billing set-alert --threshold 80 --type "percentage"
+```
+
+---
+
+<Callout type="info">
+**Still have questions?** Visit our [community forum](https://community.xether.ai) or contact [support@xether.ai](mailto:support@xether.ai)
+</Callout>
+
+For more detailed information, check our [comprehensive documentation](https://docs.xether.ai) or [API reference](/docs/api-reference/overview).
