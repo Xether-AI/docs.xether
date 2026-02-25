@@ -1,0 +1,425 @@
+---
+title: "Dataset Versioning Tutorial"
+description: "Learn how to use Xether AI's dataset versioning system for reproducible data workflows"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# Dataset Versioning Tutorial
+
+Dataset versioning is one of Xether AI's core features, enabling you to create immutable snapshots of your data at any point in time. This tutorial will teach you how to leverage versioning for reproducible workflows, data lineage, and collaboration.
+
+## Prerequisites
+
+- Basic understanding of Xether AI pipelines
+- Familiarity with YAML configuration
+- Access to Xether AI platform
+
+## What You'll Learn
+
+- How dataset versions are created automatically
+- Manual version creation and tagging
+- Comparing different dataset versions
+- Rolling back to previous versions
+- Best practices for version management
+
+## Understanding Dataset Versions
+
+Every time a pipeline runs successfully, Xether AI automatically creates a new version of the output dataset. Each version is:
+
+- **Immutable** - Once created, it never changes
+- **Addressable** - Reference by ID or semantic tags
+- **Comparable** - Diff any two versions to see changes
+- **Traceable** - Complete lineage from source to final version
+
+<Callout type="info">
+Dataset versions are stored efficiently using content-addressed storage. Identical data blocks are deduplicated, making versioning lightweight and cost-effective.
+</Callout>
+
+## Automatic Version Creation
+
+When you run a pipeline, Xether AI automatically versions the output:
+
+```yaml
+# pipeline.yaml
+name: "customer-data-processing"
+source:
+  type: "s3"
+  bucket: "my-data-bucket"
+  path: "raw/customers/"
+stages:
+  - type: "clean"
+    config:
+      remove_nulls: true
+      normalize_emails: true
+  - type: "validate"
+    config:
+      rules_file: "validation-rules.yaml"
+```
+
+```bash
+# Run the pipeline - this creates a new version automatically
+xether pipeline run customer-data-processing
+```
+
+After execution, you'll see output like:
+
+```
+✅ Pipeline completed successfully
+📦 Dataset version created: v2024.02.25.001
+🔗 Version ID: ds_1234567890abcdef
+📊 Records processed: 1,247,892
+```
+
+## Manual Version Creation
+
+Sometimes you want to create a version without running a full pipeline:
+
+### Creating a Version from Existing Data
+
+```bash
+# Create a version from current dataset state
+xether dataset version create \
+  --dataset "customer-data" \
+  --tag "quarterly-report" \
+  --description "Q4 2023 customer data for annual report"
+```
+
+### Tagging Existing Versions
+
+```bash
+# Add a semantic tag to an existing version
+xether dataset version tag \
+  --dataset "customer-data" \
+  --version "ds_1234567890abcdef" \
+  --tag "v1.2.0" \
+  --description "Stable version for production"
+```
+
+## Working with Versions
+
+### Listing Versions
+
+```bash
+# List all versions of a dataset
+xether dataset list --name "customer-data"
+
+# Show detailed version information
+xether dataset info --version "ds_1234567890abcdef"
+```
+
+Output:
+```
+Dataset: customer-data
+Versions:
+├── v1.0.0 (ds_1234567890abcdef) - 2024-01-15 10:30:00
+├── v1.1.0 (ds_1234567890abc123) - 2024-01-22 14:45:00
+├── v1.2.0 (ds_1234567890abc456) - 2024-02-05 09:15:00
+└── v1.3.0 (ds_1234567890abc789) - 2024-02-25 16:20:00 [LATEST]
+
+Version v1.3.0 (ds_1234567890abc789):
+├── Created: 2024-02-25 16:20:00 UTC
+├── Size: 2.4 GB
+├── Records: 1,247,892
+├── Pipeline: customer-data-processing (run #42)
+├── Tags: latest, production, quarterly-report
+└── Parent: ds_1234567890abc456
+```
+
+### Comparing Versions
+
+Xether AI provides powerful diff capabilities to compare versions:
+
+```bash
+# Compare two versions
+xether dataset diff \
+  --dataset "customer-data" \
+  --from "v1.2.0" \
+  --to "v1.3.0"
+
+# Get detailed schema changes
+xether dataset diff \
+  --dataset "customer-data" \
+  --from "v1.2.0" \
+  --to "v1.3.0" \
+  --schema-only
+```
+
+Diff output:
+```
+📊 Dataset Comparison: customer-data
+From: v1.2.0 (ds_1234567890abc456)
+To:   v1.3.0 (ds_1234567890abc789)
+
+📈 Summary:
+├── Records added: 15,234
+├── Records removed: 8,901
+├── Records modified: 23,456
+└── Net change: +6,333 records
+
+🏗️ Schema Changes:
+├── New field: email_verified (boolean)
+├── Modified field: phone_number (string → formatted_string)
+└── Removed field: legacy_id (integer)
+
+📋 Data Quality:
+├── Completeness: 98.5% → 99.2%
+├── Validity: 97.8% → 98.9%
+└── Consistency: 96.2% → 97.5%
+```
+
+### Rolling Back Versions
+
+If you need to revert to a previous version:
+
+```bash
+# Roll back to a specific version
+xether dataset rollback \
+  --dataset "customer-data" \
+  --version "v1.2.0" \
+  --reason "Data quality issue detected in v1.3.0"
+
+# Create a new branch from an old version
+xether dataset branch \
+  --dataset "customer-data" \
+  --from "v1.2.0" \
+  --name "hotfix/data-quality"
+```
+
+## Versioning in Pipelines
+
+### Referencing Specific Versions
+
+In your pipeline configurations, you can reference specific dataset versions:
+
+```yaml
+# production-pipeline.yaml
+name: "ml-model-training"
+source:
+  type: "dataset"
+  name: "customer-data"
+  version: "v1.2.0"  # Use specific stable version
+stages:
+  - type: "transform"
+    config:
+      model_type: "customer_churn"
+  - type: "augment"
+    config:
+      add_features: ["customer_lifetime", "purchase_patterns"]
+```
+
+### Using Dynamic Version References
+
+```yaml
+# staging-pipeline.yaml
+name: "staging-validation"
+source:
+  type: "dataset"
+  name: "customer-data"
+  version: "latest"  # Always use the latest version
+stages:
+  - type: "validate"
+    config:
+      strict_mode: true
+```
+
+```yaml
+# experimental-pipeline.yaml
+name: "experimental-feature"
+source:
+  type: "dataset"
+  name: "customer-data"
+  version: "production"  # Use version tagged as "production"
+stages:
+  - type: "transform"
+    config:
+      experimental_feature: true
+```
+
+## Best Practices
+
+### Semantic Versioning
+
+Use semantic versioning for your dataset versions:
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Version Pattern</TableHead>
+      <TableHead>When to Use</TableHead>
+      <TableHead>Example</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">v1.0.0</TableCell>
+      <TableCell>Initial stable release</TableCell>
+      <TableCell>First production-ready dataset</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">v1.1.0</TableCell>
+      <TableCell>Feature additions</TableCell>
+      <TableCell>Added new customer fields</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">v1.1.1</TableCell>
+      <TableCell>Bug fixes</TableCell>
+      <TableCell>Fixed data quality issues</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">v2.0.0</TableCell>
+      <TableCell>Breaking changes</TableCell>
+      <TableCell>Restructured customer schema</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Tagging Strategy
+
+Establish a consistent tagging strategy:
+
+```bash
+# Environment tags
+xether dataset version tag --tag "production"
+xether dataset version tag --tag "staging"
+xether dataset version tag --tag "development"
+
+# Purpose tags
+xether dataset version tag --tag "quarterly-report"
+xether dataset version tag --tag "ml-training"
+xether dataset version tag --tag "compliance-audit"
+
+# Quality tags
+xether dataset version tag --tag "validated"
+xether dataset version tag --tag "certified"
+```
+
+### Version Retention
+
+Configure automatic cleanup of old versions:
+
+```yaml
+# dataset-config.yaml
+retention:
+  policy: "smart"
+  rules:
+    - type: "keep_latest"
+      count: 10
+    - type: "keep_tagged"
+      tags: ["production", "quarterly-report"]
+    - type: "keep_after"
+      days: 90
+    - type: "keep_before"
+      date: "2024-01-01"
+```
+
+## Advanced Features
+
+### Version Branching
+
+Create experimental branches without affecting main lineage:
+
+```bash
+# Create a new branch
+xether dataset branch \
+  --dataset "customer-data" \
+  --from "v1.2.0" \
+  --name "experiment/new-features"
+
+# Work with the branch
+xether pipeline run experimental-pipeline \
+  --dataset "customer-data" \
+  --branch "experiment/new-features"
+
+# Merge branch back to main
+xether dataset merge \
+  --dataset "customer-data" \
+  --from "experiment/new-features" \
+  --to "main" \
+  --message "Add new customer segmentation features"
+```
+
+### Version Annotations
+
+Add rich metadata to versions:
+
+```bash
+xether dataset version annotate \
+  --version "ds_1234567890abcdef" \
+  --key "data_quality_score" \
+  --value "98.5"
+
+xether dataset version annotate \
+  --version "ds_1234567890abcdef" \
+  --key "compliance_status" \
+  --value "gdpr_compliant"
+
+xether dataset version annotate \
+  --version "ds_1234567890abcdef" \
+  --key "business_context" \
+  --value "q4_2023_reporting"
+```
+
+## Monitoring and Alerts
+
+Set up version monitoring:
+
+```yaml
+# monitoring.yaml
+alerts:
+  - name: "data_volume_anomaly"
+    condition: "version_size_change > 50%"
+    action: "notify_team"
+  
+  - name: "quality_degradation"
+    condition: "quality_score < 95%"
+    action: "rollback_to_last_good"
+    
+  - name: "schema_drift"
+    condition: "schema_changes > 5"
+    action: "require_manual_review"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<Callout type="warning">
+**Issue**: Version not found
+**Solution**: Check version spelling and use `xether dataset list` to see available versions
+</Callout>
+
+<Callout type="warning">
+**Issue**: Rollback failed
+**Solution**: Ensure no active pipelines are using the dataset, then retry rollback
+</Callout>
+
+<Callout type="warning">
+**Issue**: Diff shows no changes
+**Solution**: Versions might be identical. Check version metadata for differences
+</Callout>
+
+### Performance Tips
+
+1. **Use selective diffing** with `--field-filter` for large datasets
+2. **Cache version metadata** to reduce API calls
+3. **Use version ranges** in pipeline configs for flexibility
+4. **Set up retention policies** to manage storage costs
+
+## Next Steps
+
+Now that you understand dataset versioning:
+
+- Try the [Pipeline Monitoring Guide](/docs/tutorials/pipeline-monitoring)
+- Learn about [Advanced Pipeline Patterns](/docs/tutorials/advanced-pipelines)
+- Explore [Data Quality Best Practices](/docs/tutorials/data-quality)
+
+## Resources
+
+- [API Reference: Datasets](/docs/api-reference/datasets)
+- [CLI Reference: Dataset Commands](/docs/cli/dataset)
+- [Best Practices: Data Governance](/docs/best-practices/data-governance)
+- [Community Forum](https://community.xether.ai)
+
+For questions about dataset versioning, visit our [support center](https://support.xether.ai) or contact us at [support@xether.ai](mailto:support@xether.ai).

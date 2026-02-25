@@ -1,0 +1,153 @@
+---
+title: "SDK Versions"
+description: "Latest versions and download links for Xether AI SDKs"
+---
+
+import { SDKVersions } from "@/components/ui/SDKVersions";
+
+# SDK Versions
+
+<SDKVersions />
+
+## Supported Languages
+
+Xether AI provides official SDKs for the most popular programming languages, making it easy to integrate our platform into your existing workflows.
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Language</TableHead>
+      <TableHead>Package Manager</TableHead>
+      <TableHead>Package Name</TableHead>
+      <TableHead>Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Python</TableCell>
+      <TableCell className="font-mono">pip</TableCell>
+      <TableCell className="font-mono">xether-ai</TableCell>
+      <TableCell><span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Stable</span></TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">JavaScript/TypeScript</TableCell>
+      <TableCell className="font-mono">npm</TableCell>
+      <TableCell className="font-mono">@xether/sdk</TableCell>
+      <TableCell><span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Stable</span></TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Go</TableCell>
+      <TableCell className="font-mono">go get</TableCell>
+      <TableCell className="font-mono">github.com/xether-ai/go-sdk</TableCell>
+      <TableCell><span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Stable</span></TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Java</TableCell>
+      <TableCell className="font-mono">Maven</TableCell>
+      <TableCell className="font-mono">ai.xether:sdk</TableCell>
+      <TableCell><span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Stable</span></TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+## Quick Start
+
+### Python
+```bash
+pip install xether-ai
+```
+
+```python
+from xether_ai import XetherClient
+
+client = XetherClient(api_key="your-api-key")
+```
+
+### JavaScript/TypeScript
+```bash
+npm install @xether/sdk
+```
+
+```javascript
+import { XetherClient } from '@xether/sdk';
+
+const client = new XetherClient({ apiKey: 'your-api-key' });
+```
+
+### Go
+```bash
+go get github.com/xether-ai/go-sdk
+```
+
+```go
+import "github.com/xether-ai/go-sdk"
+
+client := xether.NewClient("your-api-key")
+```
+
+### Java
+```xml
+<dependency>
+  <groupId>ai.xether</groupId>
+  <artifactId>sdk</artifactId>
+  <version>1.0.5</version>
+</dependency>
+```
+
+```java
+import ai.xether.XetherClient;
+
+XetherClient client = new XetherClient("your-api-key");
+```
+
+## Version Policy
+
+We follow [Semantic Versioning](https://semver.org/) for all SDKs:
+
+- **Major versions** (X.0.0) - Breaking changes, requires migration
+- **Minor versions** (0.X.0) - New features, backward compatible
+- **Patch versions** (0.0.X) - Bug fixes, fully backward compatible
+
+## Support & Updates
+
+### Update Notifications
+- **GitHub Releases**: Watch our repositories for release notifications
+- **Package Managers**: Use `@latest` tag or check for updates regularly
+- **Changelog**: Detailed release notes in each version
+
+### Support Channels
+- **Documentation**: [docs.xether.ai](https://docs.xether.ai)
+- **GitHub Issues**: Report bugs and request features
+- **Community**: Join our [Discord server](https://discord.gg/xether-ai)
+- **Email**: sdk-support@xether.ai
+
+### Beta Programs
+Want to try new features before they're released? Join our beta program:
+
+1. **Apply** at [beta.xether.ai](https://beta.xether.ai)
+2. **Get access** to pre-release versions
+3. **Provide feedback** to shape the future of our SDKs
+
+## Security
+
+### Vulnerability Reporting
+If you discover a security vulnerability in any SDK:
+
+1. **Do not** open a public issue
+2. **Email** security@xether.ai with details
+3. **We'll respond** within 48 hours
+4. **Patch** will be released according to severity
+
+### Dependencies
+All SDKs undergo regular security audits and dependency scanning. We update dependencies promptly when vulnerabilities are discovered.
+
+## Contributing
+
+We welcome contributions to our SDKs! See our [contributing guidelines](https://github.com/xether-ai/.github/blob/main/CONTRIBUTING.md) for:
+
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Release procedures
+
+For questions about SDK versions or installation, contact our support team at [sdk-support@xether.ai](mailto:sdk-support@xether.ai).
