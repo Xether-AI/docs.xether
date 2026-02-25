@@ -1,0 +1,622 @@
+---
+title: "Handling Missing Values"
+description: "Comprehensive guide to detecting, analyzing, and handling missing data in Xether AI pipelines"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# Handling Missing Values
+
+Missing data is one of the most common challenges in data processing. This guide teaches you how to effectively detect, analyze, and handle missing values using Xether AI's powerful data cleaning capabilities.
+
+## Prerequisites
+
+- Understanding of basic Xether AI pipelines
+- Familiarity with data quality concepts
+- Access to Xether AI platform
+
+## What You'll Learn
+
+- Types of missing data patterns
+- Detection strategies for missing values
+- Multiple handling approaches
+- Advanced imputation techniques
+- Best practices for different scenarios
+
+## Understanding Missing Data
+
+Missing data can occur in various patterns and for different reasons. Understanding these patterns helps choose the right handling strategy.
+
+### Types of Missing Data
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Type</TableHead>
+      <TableHead>Description</TableHead>
+      <TableHead>Example</TableHead>
+      <TableHead>Recommended Approach</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Missing Completely at Random (MCAR)</TableCell>
+      <TableCell>Missing values have no relationship with other variables</TableCell>
+      <TableCell>Customer email field randomly empty</TableCell>
+      <TableCell>Simple imputation (mean, median)</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Missing at Random (MAR)</TableCell>
+      <TableCell>Missingness depends on observed variables</TableCell>
+      <TableCell>Salary missing for unemployed people</TableCell>
+      <TableCell>Conditional imputation</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Missing Not at Random (MNAR)</TableCell>
+      <TableCell>Missingness depends on unobserved factors</TableCell>
+      <TableCell>High-income people not reporting income</TableCell>
+      <TableCell>Advanced techniques, flagging</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Structural Missingness</TableCell>
+      <TableCell>Missing due to data structure design</TableCell>
+      <TableCell>Children in adult-only dataset</TableCell>
+      <TableCell>Data restructuring</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Common Missing Data Patterns
+
+```yaml
+# missing-data-patterns.yaml
+name: "analyze-missing-patterns"
+source:
+  type: "dataset"
+  name: "customer_data"
+
+stages:
+  - type: "analyze_missing"
+    config:
+      patterns:
+        - type: "completely_missing"
+          fields: ["email", "phone"]
+          threshold: 0.3  # 30% missing rate
+          
+        - type: "systematic_missing"
+          fields: ["income", "age"]
+          condition: "employment_status == 'unemployed'"
+          
+        - type: "structural_missing"
+          fields: ["spouse_income", "children_count"]
+          condition: "marital_status != 'married'"
+```
+
+## Detection Strategies
+
+### Basic Missing Value Analysis
+
+```yaml
+# basic-detection.yaml
+name: "missing-value-detection"
+source:
+  type: "dataset"
+  name: "raw_data"
+
+stages:
+  - type: "missing_analysis"
+    config:
+      summary: true
+      field_level: true
+      patterns: true
+      
+  - type: "missing_report"
+    config:
+      output_format: "html"
+      include_visualizations: true
+      threshold_alert: 0.1  # Alert if >10% missing
+```
+
+### Advanced Detection Techniques
+
+```yaml
+# advanced-detection.yaml
+name: "advanced-missing-detection"
+source:
+  type: "dataset"
+  name: "complex_data"
+
+stages:
+  - type: "correlation_analysis"
+    config:
+      missing_correlation: true
+      visualize_patterns: true
+      
+  - type: "missing_mechanism_test"
+    config:
+      test_type: "little_mcar_test"
+      significance_level: 0.05
+      
+  - type: "pattern_clustering"
+    config:
+      algorithm: "kmeans"
+      features: ["missing_rate", "field_type", "data_source"]
+```
+
+## Handling Strategies
+
+### 1. Deletion Strategies
+
+#### Complete Case Deletion
+
+```yaml
+# complete-case.yaml
+name: "complete-case-analysis"
+source:
+  type: "dataset"
+  name: "survey_data"
+
+stages:
+  - type: "filter_complete_cases"
+    config:
+      strategy: "listwise"  # Delete rows with any missing
+      missing_threshold: 0.2  # Allow up to 20% missing per row
+      
+  - type: "analyze_impact"
+    config:
+      before_size: true
+      after_size: true
+      missing_distribution: true
+```
+
+#### Pairwise Deletion
+
+```yaml
+# pairwise.yaml
+name: "pairwise-analysis"
+source:
+  type: "dataset"
+  name: "correlation_data"
+
+stages:
+  - type: "pairwise_deletion"
+    config:
+      strategy: "pairwise"  # Use complete cases for each analysis
+      analyses: ["correlation", "regression"]
+      
+  - type: "missing_impact_report"
+    config:
+      show_deleted_cases: true
+      show_analysis_coverage: true
+```
+
+<Callout type="warning">
+**Caution**: Deletion strategies can significantly reduce your dataset size and introduce bias. Use only when missing data is minimal (&lt;5%) or completely random.
+</Callout>
+
+### 2. Simple Imputation
+
+#### Mean/Median/Mode Imputation
+
+```yaml
+# simple-imputation.yaml
+name: "basic-imputation"
+source:
+  type: "dataset"
+  name: "numeric_data"
+
+stages:
+  - type: "impute_numeric"
+    config:
+      strategy: "mean"  # Options: mean, median, mode
+      fields: ["age", "income", "score"]
+      group_by: ["department", "role"]  # Group-specific imputation
+      
+  - type: "impute_categorical"
+    config:
+      strategy: "mode"  # Most frequent value
+      fields: ["category", "status", "region"]
+      
+  - type: "imputation_report"
+    config:
+      show_original_vs_imputed: true
+      imputation_quality: true
+```
+
+#### Forward/Backward Fill
+
+```yaml
+# time-series-imputation.yaml
+name: "time-series-imputation"
+source:
+  type: "dataset"
+  name: "sensor_data"
+
+stages:
+  - type: "temporal_impute"
+    config:
+      strategy: "forward_fill"  # Options: forward_fill, backward_fill, linear
+      field: "temperature"
+      max_gap: 24  # Max hours to fill
+      
+  - type: "interpolation_impute"
+    config:
+      strategy: "linear"
+      field: "pressure"
+      method: "time_weighted"
+```
+
+### 3. Advanced Imputation Techniques
+
+#### Regression Imputation
+
+```yaml
+# regression-imputation.yaml
+name: "regression-imputation"
+source:
+  type: "dataset"
+  name: "customer_data"
+
+stages:
+  - type: "regression_impute"
+    config:
+      target_field: "income"
+      predictor_fields: ["age", "education", "experience"]
+      model_type: "linear"
+      cross_validation: true
+      
+  - type: "imputation_validation"
+    config:
+      test_on_known: true
+      calculate_rmse: true
+      residual_analysis: true
+```
+
+#### K-Nearest Neighbors Imputation
+
+```yaml
+# knn-imputation.yaml
+name: "knn-imputation"
+source:
+  type: "dataset"
+  name: "mixed_data"
+
+stages:
+  - type: "knn_impute"
+    config:
+      k: 5
+      distance_metric: "euclidean"
+      weighting: "distance"
+      fields: ["age", "income", "satisfaction_score"]
+      categorical_handling: "mode"
+      
+  - type: "imputation_quality_check"
+    config:
+      local_validation: true
+      global_validation: true
+```
+
+#### Multiple Imputation
+
+```yaml
+# multiple-imputation.yaml
+name: "multiple-imputation"
+source:
+  type: "dataset"
+  name: "survey_data"
+
+stages:
+  - type: "multiple_impute"
+    config:
+      method: "mice"  # Multiple Imputation by Chained Equations
+      iterations: 10
+      imputations: 5  # Create 5 complete datasets
+      
+  - type: "imputation_aggregation"
+    config:
+      strategy: "mean"  # Options: mean, median, mode
+      calculate_variance: true
+      
+  - type: "uncertainty_analysis"
+    config:
+      between_imputation_variance: true
+      total_variance: true
+```
+
+### 4. Machine Learning Approaches
+
+#### Deep Learning Imputation
+
+```yaml
+# deep-learning-imputation.yaml
+name: "deep-imputation"
+source:
+  type: "dataset"
+  name: "complex_data"
+
+stages:
+  - type: "autoencoder_impute"
+    config:
+      architecture: "variational"
+      layers: [64, 32, 16, 32, 64]
+      activation: "relu"
+      epochs: 100
+      batch_size: 32
+      
+  - type: "gan_impute"
+    config:
+      generator_layers: [128, 64, 32]
+      discriminator_layers: [32, 64, 128]
+      epochs: 200
+      noise_dimension: 16
+```
+
+## Field-Specific Strategies
+
+### Numeric Fields
+
+```yaml
+# numeric-strategies.yaml
+stages:
+  - type: "numeric_impute"
+    config:
+      field_strategies:
+        - field: "age"
+          strategy: "median"
+          bounds: [0, 120]  # Reasonable age range
+          
+        - field: "income"
+          strategy: "regression"
+          predictors: ["education", "experience"]
+          
+        - field: "score"
+          strategy: "knn"
+          k: 10
+          features: ["demographics", "behavior"]
+```
+
+### Categorical Fields
+
+```yaml
+# categorical-strategies.yaml
+stages:
+  - type: "categorical_impute"
+    config:
+      field_strategies:
+        - field: "category"
+          strategy: "mode"
+          min_frequency: 0.05  # Must appear in >5% of cases
+          
+        - field: "status"
+          strategy: "conditional"
+          condition: "account_active == true"
+          default_value: "active"
+          
+        - field: "region"
+          strategy: "ml_prediction"
+          features: ["ip_address", "timezone"]
+```
+
+### Time Series Fields
+
+```yaml
+# time-series-strategies.yaml
+stages:
+  - type: "temporal_impute"
+    config:
+      field_strategies:
+        - field: "sensor_value"
+          strategy: "seasonal_decomposition"
+          method: "stl"
+          
+        - field: "stock_price"
+          strategy: "kalman_filter"
+          process_noise: 0.1
+          
+        - field: "web_traffic"
+          strategy: "prophet"
+          seasonality: "weekly"
+```
+
+## Quality Assurance
+
+### Imputation Validation
+
+```yaml
+# validation.yaml
+name: "imputation-validation"
+stages:
+  - type: "create_test_missing"
+    config:
+      missing_rate: 0.15  # Remove 15% of values artificially
+      missing_pattern: "random"
+      
+  - type: "apply_imputation"
+    config:
+      pipeline: "main_imputation_pipeline"
+      
+  - type: "validate_imputation"
+    config:
+      metrics: ["mae", "rmse", "mape"]
+      compare_to_original: true
+      generate_report: true
+```
+
+### Statistical Tests
+
+```yaml
+# statistical-tests.yaml
+stages:
+  - type: "missingness_test"
+    config:
+      test: "little_mcar"
+      significance: 0.05
+      
+  - type: "imputation_bias_test"
+    config:
+      test: "kolmogorov_smirnov"
+      compare_distributions: true
+```
+
+## Best Practices
+
+### Strategy Selection Guide
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Scenario</TableHead>
+      <TableHead>Missing Rate</TableHead>
+      <TableHead>Data Type</TableHead>
+      <TableHead>Recommended Strategy</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Exploratory Analysis</TableCell>
+      <TableCell>&lt; 5%</TableCell>
+      <TableCell>Any</TableCell>
+      <TableCell>Complete case analysis or simple imputation</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Production ML Model</TableCell>
+      <TableCell>5-20%</TableCell>
+      <TableCell>Numeric</TableCell>
+      <TableCell>Multiple imputation with uncertainty</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Time Series Forecasting</TableCell>
+      <TableCell>&lt; 10%</TableCell>
+      <TableCell>Temporal</TableCell>
+      <TableCell>Temporal interpolation or Kalman filtering</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">High-Stakes Decision</TableCell>
+      <TableCell>&gt; 20%</TableCell>
+      <TableCell>Critical</TableCell>
+      <TableCell>Flag and collect more data</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Implementation Guidelines
+
+
+<Callout type="info">
+**Always Document**: Keep track of imputation decisions, parameters, and validation results for reproducibility.
+</Callout>
+
+<Callout type="warning">
+**Monitor Quality**: Regularly validate imputation quality and adjust strategies as data patterns evolve.
+</Callout>
+
+<Callout type="tip">
+**Preserve Original**: Always keep original missing values for comparison and potential re-imputation.
+</Callout>
+
+## Advanced Features
+
+### Uncertainty Quantification
+
+```yaml
+# uncertainty.yaml
+stages:
+  - type: "uncertainty_quantification"
+    config:
+      method: "bootstrap"
+      samples: 100
+      confidence_intervals: [0.95, 0.99]
+      
+  - type: "propagate_uncertainty"
+    config:
+      monte_carlo_samples: 1000
+      downstream_models: true
+```
+
+### Sensitivity Analysis
+
+```yaml
+# sensitivity.yaml
+stages:
+  - type: "imputation_sensitivity"
+    config:
+      strategies: ["mean", "median", "knn", "regression"]
+      evaluation_metrics: ["accuracy", "f1_score", "rmse"]
+      
+  - type: "sensitivity_report"
+    config:
+      compare_strategies: true
+      recommend_best: true
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<Callout type="warning">
+**Issue**: Imputation introduces unrealistic values
+**Solution**: Add constraints and validation bounds to imputed values
+</Callout>
+
+<Callout type="warning">
+**Issue**: Imputation reduces data variance
+**Solution**: Use methods that preserve variance or add random noise
+</Callout>
+
+<Callout type="warning">
+**Issue**: Categorical imputation creates rare categories
+**Solution**: Set minimum frequency thresholds for mode imputation
+</Callout>
+
+## Performance Optimization
+
+### Large Dataset Handling
+
+```yaml
+# optimization.yaml
+stages:
+  - type: "chunked_imputation"
+    config:
+      chunk_size: 100000
+      parallel_workers: 4
+      memory_limit: "8GB"
+      
+  - type: "incremental_learning"
+    config:
+      update_frequency: "daily"
+      model_retention: "monthly"
+```
+
+### Memory Efficiency
+
+```yaml
+# memory-efficient.yaml
+stages:
+  - type: "sparse_imputation"
+    config:
+      use_sparse_matrices: true
+      compression: "csr"  # Compressed Sparse Row
+      
+  - type: "streaming_impute"
+    config:
+      buffer_size: 10000
+      checkpoint_interval: 50000
+```
+
+## Next Steps
+
+Now that you understand missing value handling:
+
+- Try to [Data Quality Validation](/docs/tutorials/data-quality)
+- Learn about [Advanced Pipeline Patterns](/docs/tutorials/advanced-pipelines)
+- Explore [ML Services for Anomaly Detection](/docs/ml-services/outlier-detection)
+
+## Resources
+
+- [API Reference: Data Cleaning](/docs/api-reference/data-cleaning)
+- [CLI Reference: Imputation Commands](/docs/cli/imputation)
+- [Best Practices: Data Quality](/docs/best-practices/data-quality)
+- [Research Papers: Missing Data Imputation](https://papers.xether.ai/missing-data)
+
+For questions about handling missing values, visit our [community forum](https://community.xether.ai) or contact us at [support@xether.ai](mailto:support@xether.ai).
