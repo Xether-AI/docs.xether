@@ -1,0 +1,744 @@
+---
+title: "Advanced Pipeline Tutorial"
+description: "Master advanced Xether AI pipeline concepts including conditional execution, parallel processing, and optimization"
+---
+
+import { Callout } from "@/components/ui/Callout";
+import { CodeBlock } from "@/components/ui/CodeBlock";
+
+# Advanced Pipeline Tutorial
+
+Ready to take your Xether AI skills to the next level? This tutorial covers advanced pipeline concepts that will help you build sophisticated, efficient, and scalable data workflows.
+
+## Prerequisites
+
+- Completed [Your First Pipeline](/docs/tutorials/your-first-pipeline) tutorial
+- Understanding of basic YAML configuration
+- Familiarity with dataset versioning
+- Knowledge of SQL and data transformation concepts
+
+## What You'll Learn
+
+- Conditional pipeline execution
+- Parallel processing strategies
+- Dynamic pipeline configuration
+- Performance optimization techniques
+- Error handling and recovery
+- Pipeline orchestration patterns
+
+## Conditional Pipeline Execution
+
+Conditional execution allows your pipelines to make decisions based on data characteristics, external factors, or previous stage results.
+
+### Basic Conditional Logic
+
+```yaml
+# conditional-pipeline.yaml
+name: "adaptive-data-processing"
+source:
+  type: "s3"
+  bucket: "my-data-bucket"
+  path: "input/"
+  
+conditions:
+  - name: "is_large_dataset"
+    expression: "source.size > 1_000_000_000"  # 1GB
+  - name: "is_business_hours"
+    expression: "now.hour >= 9 and now.hour <= 17"
+  - name: "is_high_priority"
+    expression: "source.metadata.priority == 'high'"
+
+stages:
+  - type: "conditional"
+    condition: "is_large_dataset"
+    true_branch:
+      - type: "ingest"
+        config:
+          batch_size: 10000
+          parallel_workers: 8
+    false_branch:
+      - type: "ingest"
+        config:
+          batch_size: 1000
+          parallel_workers: 2
+```
+
+### Multi-Condition Logic
+
+```yaml
+stages:
+  - type: "switch"
+    expression: "source.data_type"
+    cases:
+      - case: "csv"
+        stages:
+          - type: "parse_csv"
+            config:
+              delimiter: ","
+              header: true
+          - type: "validate"
+            config:
+              schema_file: "csv-schema.yaml"
+      - case: "json"
+        stages:
+          - type: "parse_json"
+            config:
+              nested: true
+              schema_validation: true
+          - type: "flatten"
+            config:
+              max_depth: 3
+      - case: "parquet"
+        stages:
+          - type: "read_parquet"
+            config:
+              compression: "snappy"
+      - default:
+        stages:
+          - type: "error"
+            message: "Unsupported data type: ${source.data_type}"
+```
+
+### Dynamic Configuration Based on Data
+
+```yaml
+stages:
+  - type: "analyze"
+    config:
+      output_format: "json"
+    
+  - type: "conditional"
+    expression: "analyze.output.stats.null_percentage > 10"
+    true_branch:
+      - type: "clean"
+        config:
+          null_handling: "interpolate"
+          interpolation_method: "linear"
+    false_branch:
+      - type: "clean"
+        config:
+          null_handling: "drop"
+          
+  - type: "conditional"
+    expression: "analyze.output.stats.cardinality > 1000"
+    true_branch:
+      - type: "encode"
+        config:
+          method: "target_encoding"
+        false_branch:
+          - type: "encode"
+            config:
+              method: "one_hot_encoding"
+```
+
+## Parallel Processing
+
+Xether AI supports multiple parallelism strategies to optimize performance for large datasets.
+
+### Stage-Level Parallelism
+
+```yaml
+# parallel-processing.yaml
+name: "high-throughput-processing"
+source:
+  type: "s3"
+  bucket: "big-data-bucket"
+  path: "massive-dataset/"
+
+stages:
+  - type: "partition"
+    config:
+      strategy: "hash"
+      field: "user_id"
+      partitions: 16
+      
+  - type: "parallel_map"
+    config:
+      stage: "transform_user_data"
+      parallelism: 16
+      resources:
+        memory: "4GB"
+        cpu: "2"
+        
+  - type: "parallel_reduce"
+    config:
+      strategy: "merge"
+      parallelism: 4
+```
+
+### Pipeline-Level Parallelism
+
+```yaml
+# parallel-pipeline.yaml
+name: "multi-stream-processing"
+parallel_groups:
+  - name: "user_data_stream"
+    stages:
+      - type: "ingest"
+        source: "s3://user-data/"
+      - type: "transform"
+        config:
+          user_profile_enrichment: true
+    resources:
+      parallelism: 8
+      
+  - name: "transaction_data_stream"
+    stages:
+      - type: "ingest"
+        source: "s3://transactions/"
+      - type: "aggregate"
+        config:
+          window: "1h"
+          group_by: "user_id"
+    resources:
+      parallelism: 12
+      
+  - name: "event_data_stream"
+    stages:
+      - type: "ingest"
+        source: "s3://events/"
+      - type: "filter"
+        config:
+          conditions: ["event_type == 'purchase'", "event_type == 'login'"]
+    resources:
+      parallelism: 6
+
+# Merge all parallel streams
+merge_strategy:
+  type: "union"
+  key: "user_id"
+```
+
+### Distributed Processing
+
+```yaml
+# distributed-pipeline.yaml
+name: "distributed-analytics"
+cluster:
+  type: "auto_scale"
+  min_nodes: 2
+  max_nodes: 20
+  instance_type: "compute_optimized"
+
+stages:
+  - type: "distribute"
+    config:
+      strategy: "range_partition"
+      field: "timestamp"
+      partitions: 100
+      
+  - type: "map_reduce"
+    config:
+      map_function: "aggregate_events"
+      reduce_function: "summarize_by_user"
+      combiner: true
+      
+  - type: "collect"
+    config:
+      strategy: "single_output"
+      format: "parquet"
+```
+
+## Dynamic Pipeline Configuration
+
+### Environment-Based Configuration
+
+```yaml
+# dynamic-config.yaml
+name: "environment-aware-pipeline"
+
+environment_variables:
+  - name: "ENVIRONMENT"
+    required: true
+  - name: "DATA_RETENTION_DAYS"
+    default: 30
+  - name: "MAX_WORKERS"
+    default: 4
+
+config:
+  batch_size: "${BATCH_SIZE:-1000}"
+  max_workers: "${MAX_WORKERS}"
+  output_path: "s3://output-${ENVIRONMENT}/"
+  retention_days: "${DATA_RETENTION_DAYS}"
+
+stages:
+  - type: "conditional"
+    expression: "ENVIRONMENT == 'production'"
+    true_branch:
+      - type: "validate"
+        config:
+          strict_mode: true
+          fail_fast: true
+    false_branch:
+      - type: "validate"
+        config:
+          strict_mode: false
+          warn_only: true
+```
+
+### Template-Based Pipelines
+
+```yaml
+# template-pipeline.yaml
+name: "template-driven-pipeline"
+template:
+  name: "standard_etl"
+  version: "1.0"
+  
+parameters:
+  - name: "source_type"
+    type: "enum"
+    values: ["database", "s3", "api"]
+    required: true
+  - name: "target_schema"
+    type: "string"
+    required: true
+  - name: "quality_threshold"
+    type: "float"
+    default: 0.95
+    min: 0.0
+    max: 1.0
+
+stages:
+  - type: "template"
+    template_name: "ingest_${source_type}"
+    parameters:
+      schema: "${target_schema}"
+      
+  - type: "template"
+    template_name: "standard_cleaning"
+    parameters:
+      quality_threshold: "${quality_threshold}"
+      
+  - type: "template"
+    template_name: "standard_validation"
+    parameters:
+      schema: "${target_schema}"
+```
+
+## Performance Optimization
+
+### Memory Management
+
+```yaml
+# memory-optimized.yaml
+name: "memory-efficient-pipeline"
+
+resources:
+  default:
+    memory: "2GB"
+    cpu: "1"
+    
+stages:
+  - type: "streaming_ingest"
+    config:
+      chunk_size: 10000
+      memory_limit: "1GB"
+      
+  - type: "memory_managed_transform"
+    config:
+      spill_to_disk: true
+      memory_threshold: "80%"
+      disk_path: "/tmp/spill/"
+      
+  - type: "batch_writer"
+    config:
+      batch_size: 50000
+      flush_interval: "30s"
+```
+
+### Caching Strategies
+
+```yaml
+# caching-pipeline.yaml
+name: "cached-processing"
+
+cache:
+  enabled: true
+  strategy: "smart"
+  config:
+    memory_cache: "1GB"
+    disk_cache: "10GB"
+    ttl: "24h"
+
+stages:
+  - type: "cached_lookup"
+    config:
+      cache_key: "user_profile_${user_id}"
+      cache_ttl: "1h"
+      fallback: "database_lookup"
+      
+  - type: "transform"
+    config:
+      enable_cache: true
+      cache_strategy: "input_hash"
+      
+  - type: "cached_output"
+    config:
+      cache_key: "transformed_${input_hash}"
+      invalidate_on: ["schema_change", "source_update"]
+```
+
+## Error Handling and Recovery
+
+### Retry Logic
+
+```yaml
+# resilient-pipeline.yaml
+name: "error-resilient-pipeline"
+
+error_handling:
+  strategy: "continue_on_error"
+  max_retries: 3
+  retry_delay: "exponential_backoff"
+  dead_letter_queue: "s3://failed-records/"
+
+stages:
+  - type: "ingest"
+    config:
+      retry_on: ["timeout", "network_error", "rate_limit"]
+      max_retries: 5
+      
+  - type: "transform"
+    config:
+      error_handling: "skip_record"
+      error_output: "errors/"
+      
+  - type: "validate"
+    config:
+      error_handling: "fail_fast"
+      error_threshold: 0.01  # 1% error rate
+```
+
+### Circuit Breaker Pattern
+
+```yaml
+# circuit-breaker.yaml
+name: "circuit-breaker-pipeline"
+
+circuit_breaker:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: "60s"
+  half_open_max_calls: 3
+
+stages:
+  - type: "external_api_call"
+    config:
+      circuit_breaker: true
+      timeout: "30s"
+      fallback_data: "default_values"
+      
+  - type: "conditional"
+    expression: "circuit_breaker.state == 'open'"
+    true_branch:
+      - type: "use_cache"
+        config:
+          cache_ttl: "5m"
+    false_branch:
+      - type: "external_api_call"
+```
+
+## Pipeline Orchestration
+
+### DAG-Based Workflows
+
+```yaml
+# dag-workflow.yaml
+name: "complex-data-workflow"
+
+workflow:
+  type: "dag"
+  
+nodes:
+  - name: "ingest_raw_data"
+    type: "ingest"
+    dependencies: []
+    
+  - name: "clean_user_data"
+    type: "clean"
+    dependencies: ["ingest_raw_data"]
+    
+  - name: "clean_transaction_data"
+    type: "clean"
+    dependencies: ["ingest_raw_data"]
+    
+  - name: "enrich_user_profiles"
+    type: "enrich"
+    dependencies: ["clean_user_data"]
+    
+  - name: "aggregate_transactions"
+    type: "aggregate"
+    dependencies: ["clean_transaction_data"]
+    
+  - name: "join_user_transactions"
+    type: "join"
+    dependencies: ["enrich_user_profiles", "aggregate_transactions"]
+    
+  - name: "generate_analytics"
+    type: "ml_transform"
+    dependencies: ["join_user_transactions"]
+
+execution:
+  strategy: "parallel_where_possible"
+  max_concurrent_nodes: 4
+```
+
+### Event-Driven Pipelines
+
+```yaml
+# event-driven.yaml
+name: "event-driven-processing"
+
+triggers:
+  - type: "s3_event"
+    bucket: "incoming-data"
+    events: ["s3:ObjectCreated:*"]
+    filter: "prefix = 'raw/'"
+    
+  - type: "schedule"
+    cron: "0 */5 * * * *"  # Every 5 minutes
+    action: "process_queue"
+
+stages:
+  - type: "event_processor"
+    config:
+      event_type: "s3_upload"
+      handler: "process_new_file"
+      
+  - type: "queue_processor"
+    config:
+      queue: "processing_queue"
+      batch_size: 100
+      visibility_timeout: "30s"
+```
+
+## Monitoring and Observability
+
+### Advanced Metrics
+
+```yaml
+# monitoring.yaml
+name: "observable-pipeline"
+
+monitoring:
+  metrics:
+    - name: "throughput"
+      type: "counter"
+      labels: ["stage", "data_type"]
+      
+    - name: "latency"
+      type: "histogram"
+      buckets: [10, 50, 100, 500, 1000, 5000]
+      
+    - name: "error_rate"
+      type: "gauge"
+      threshold: 0.05
+      
+    - name: "memory_usage"
+      type: "gauge"
+      unit: "bytes"
+
+alerts:
+  - name: "high_latency"
+    condition: "latency_p95 > 1000ms"
+    action: "scale_up"
+    
+  - name: "high_error_rate"
+    condition: "error_rate > 0.05"
+    action: "notify_team"
+```
+
+### Distributed Tracing
+
+```yaml
+# tracing.yaml
+name: "traced-pipeline"
+
+tracing:
+  enabled: true
+  sampling_rate: 0.1  # 10% sampling
+  export_to: ["jaeger", "prometheus"]
+
+stages:
+  - type: "traced_transform"
+    config:
+      trace_id_propagation: true
+      span_annotations: true
+      custom_tags: ["pipeline_version", "environment"]
+```
+
+## Best Practices
+
+### Performance Optimization
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Technique</TableHead>
+      <TableHead>When to Use</TableHead>
+      <TableHead>Expected Improvement</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell className="font-medium">Parallel Processing</TableCell>
+      <TableCell>Large datasets (>1M records)</TableCell>
+      <TableCell>2-8x throughput improvement</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Smart Caching</TableCell>
+      <TableCell>Repeated lookups/enrichments</TableCell>
+      <TableCell>50-90% latency reduction</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Memory Management</TableCell>
+      <TableCell>Memory-intensive transformations</TableCell>
+      <TableCell>Prevent OOM, handle larger datasets</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell className="font-medium">Batch Optimization</TableCell>
+      <TableCell>High-volume data processing</TableCell>
+      <TableCell>20-40% efficiency gain</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+### Error Handling Strategies
+
+<Callout type="info">
+**Graceful Degradation**: Design pipelines to continue processing even when non-critical components fail
+</Callout>
+
+<Callout type="warning">
+**Circuit Breakers**: Prevent cascade failures by temporarily disabling failing external dependencies
+</Callout>
+
+<Callout type="tip">
+**Dead Letter Queues**: Capture failed records for later analysis and reprocessing
+</Callout>
+
+## Real-World Examples
+
+### Real-Time Analytics Pipeline
+
+```yaml
+# realtime-analytics.yaml
+name: "realtime-user-analytics"
+triggers:
+  - type: "kafka"
+    topic: "user_events"
+    consumer_group: "analytics_pipeline"
+
+stages:
+  - type: "windowed_aggregate"
+    config:
+      window: "5m"
+      group_by: "user_id"
+      aggregations: ["count", "sum", "avg"]
+      
+  - type: "sessionize"
+    config:
+      timeout: "30m"
+      session_key: "user_id"
+      
+  - type: "ml_scoring"
+    config:
+      model: "user_engagement_v2"
+      batch_size: 100
+      
+  - type: "output"
+    config:
+      destinations:
+        - type: "elasticsearch"
+          index: "user_sessions"
+        - type: "redis"
+          ttl: "1h"
+```
+
+### Machine Learning Pipeline
+
+```yaml
+# ml-pipeline.yaml
+name: "ml-model-training"
+workflow:
+  type: "dag"
+
+nodes:
+  - name: "feature_engineering"
+    type: "transform"
+    dependencies: []
+    
+  - name: "data_splitting"
+    type: "split"
+    dependencies: ["feature_engineering"]
+    config:
+      train_ratio: 0.7
+      val_ratio: 0.2
+      test_ratio: 0.1
+      
+  - name: "model_training"
+    type: "ml_train"
+    dependencies: ["data_splitting"]
+    config:
+      algorithm: "random_forest"
+      hyperparameters:
+        n_estimators: 100
+        max_depth: 10
+        
+  - name: "model_evaluation"
+    type: "ml_evaluate"
+    dependencies: ["model_training"]
+    
+  - name: "model_deployment"
+    type: "ml_deploy"
+    dependencies: ["model_evaluation"]
+    condition: "model_evaluation.accuracy > 0.85"
+```
+
+## Testing and Validation
+
+### Pipeline Testing
+
+```yaml
+# test-pipeline.yaml
+name: "pipeline-tests"
+
+test_suites:
+  - name: "unit_tests"
+    stages:
+      - type: "test_data_generator"
+        config:
+          size: 1000
+          schema: "test_schema"
+          
+      - type: "pipeline_runner"
+        config:
+          pipeline: "main_pipeline"
+          input: "test_data"
+          
+      - type: "assertions"
+        config:
+          - type: "schema_validation"
+          - type: "data_quality"
+            min_score: 0.95
+          - type: "performance"
+            max_runtime: "5m"
+```
+
+## Next Steps
+
+Congratulations! You've mastered advanced pipeline concepts. Continue your learning:
+
+- Explore [ML Services](/docs/ml-services/overview)
+- Learn about [Performance Optimization](/docs/best-practices/performance)
+- Check [Pipeline Design Patterns](/docs/best-practices/pipeline-patterns)
+
+## Resources
+
+- [API Reference: Pipelines](/docs/api-reference/pipelines)
+- [CLI Reference: Advanced Commands](/docs/cli/advanced)
+- [Community Examples](https://github.com/xether-ai/examples)
+- [Performance Tuning Guide](/docs/guides/performance-tuning)
+
+For advanced pipeline questions, visit our [community forum](https://community.xether.ai) or contact [enterprise-support@xether.ai](mailto:enterprise-support@xether.ai).
